@@ -7,7 +7,15 @@ from homeassistant.const import CONF_MODE, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .core.const import CONF_COUNTRY_CODE, CONF_DEBUG, CONF_MODES, DOMAIN
+from .core.const import (
+    CONF_COUNTRY_CODE,
+    CONF_DEBUG,
+    CONF_MODES,
+    CONF_MQTT_ENABLED,
+    CONF_MQTT_PREFIX,
+    CONF_MQTT_RETAIN,
+    DOMAIN,
+)
 from .core.ewelink import XRegistryCloud
 from .core.ewelink.cloud import REGIONS
 
@@ -122,6 +130,9 @@ class OptionsFlowHandler(OptionsFlow):
             {
                 vol.Optional(CONF_MODE, default="auto"): vol.In(CONF_MODES),
                 vol.Optional(CONF_DEBUG, default=False): bool,
+                vol.Optional(CONF_MQTT_ENABLED, default=False): bool,
+                vol.Optional(CONF_MQTT_PREFIX, default="sonoff"): str,
+                vol.Optional(CONF_MQTT_RETAIN, default=True): bool,
                 vol.Optional("homes"): cv.multi_select(homes),
             },
             dict(self.config_entry.options),

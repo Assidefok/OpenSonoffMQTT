@@ -8,6 +8,10 @@ CONF_DEVICEKEY = "devicekey"
 CONF_RFBRIDGE = "rfbridge"
 CONF_COUNTRY_CODE = "country_code"
 
+CONF_MQTT_ENABLED = "mqtt_enabled"
+CONF_MQTT_PREFIX = "mqtt_prefix"
+CONF_MQTT_RETAIN = "mqtt_retain"
+
 CONF_MODES = ["auto", "cloud", "local"]
 
 PRIVATE_KEYS = (

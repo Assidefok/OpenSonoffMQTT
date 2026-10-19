@@ -11,6 +11,7 @@ from .local import XRegistryLocal
 _LOGGER = logging.getLogger(__name__)
 
 SIGNAL_ADD_ENTITIES = "add_entities"
+SIGNAL_DEVICE_ADDED = "device_added"
 LOCAL_TTL = 60
 
 
@@ -67,6 +68,7 @@ class XRegistry(XRegistryBase):
                 entities += [cls(self, device) for cls in get_spec(device)]
 
                 self.devices[did] = device
+                self.dispatcher_send(SIGNAL_DEVICE_ADDED, device)
 
             except Exception as e:
                 _LOGGER.warning(f"{did} !! can't setup device", exc_info=e)

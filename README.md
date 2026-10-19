@@ -2,6 +2,9 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 
+> [!NOTE]
+> This is the **OpenSonoffMQTT** fork of [SonoffLAN](https://github.com/AlexxIT/SonoffLAN), published at [github.com/Assidefok/OpenSonoffMQTT](https://github.com/Assidefok/OpenSonoffMQTT). It adds an [MQTT bridge](#mqtt-bridge-opensonoffmqtt-fork) on top of upstream SonoffLAN.
+
 Home Assistant custom component for control [Sonoff](https://www.itead.cc/) devices with [eWeLink](https://www.ewelink.cc/en/) (original) firmware over LAN and/or Cloud.
 
 > [!CAUTION]
@@ -17,6 +20,7 @@ Home Assistant custom component for control [Sonoff](https://www.itead.cc/) devi
   * [Mode](#mode)
   * [Debug page](#debug-page)
   * [Homes](#homes)
+- [MQTT bridge](#mqtt-bridge-opensonoffmqtt-fork)
 - [Configuration YAML](#configuration-yaml)
   * [Custom device_class](#custom-device-class)
   * [Custom devices](#custom-devices)
@@ -54,6 +58,38 @@ A list of known devices can be found here - [DEVICES](DEVICES.md).
 - instant device state update with local Multicast or cloud Websocket connection
 - load devices list from eWeLink Servers (with names and encryption keys) and save it locally
 - (optional) change [device type](#custom-device_class) from `switch` to `light`
+
+## MQTT bridge (OpenSonoffMQTT fork)
+
+This fork can expose Sonoff devices over MQTT. It reuses the MQTT broker already configured in the official [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) - no second broker configuration is needed. The MQTT integration must be set up before enabling the bridge.
+
+Enable it in the integration options: Settings > [Integrations](https://my.home-assistant.io/redirect/integrations/) > **Sonoff** > Configure (gear) > enable **MQTT bridge**, set **MQTT topic prefix** (default `sonoff`) and **Retain state messages**.
+
+Topics with the default prefix:
+
+| Topic | Direction | Payload |
+|-------|-----------|---------|
+| `<prefix>/<deviceid>/state` | publish | JSON snapshot, retained: `{"deviceid","name","uiid","online","local","params":{...}}` |
+| `<prefix>/<deviceid>/availability` | publish | `online` / `offline`, retained |
+| `<prefix>/<deviceid>/get` | subscribe | republish the current snapshot |
+| `<prefix>/<deviceid>/set` | subscribe | JSON params (`{"switch":"on"}`, `{"brightness":80}`, ...) or `ON` / `OFF` / `TOGGLE` |
+| `<prefix>/bridge/status` | publish | `online` / `offline`, retained |
+| `<prefix>/bridge/devices` | publish | JSON list of known devices, retained |
+
+Examples with `mosquitto_sub` and `mosquitto_pub`:
+
+```bash
+# subscribe to states and availability of all devices
+mosquitto_sub -h 192.168.1.123 -t 'sonoff/+/state' -t 'sonoff/+/availability' -v
+
+# switch a device on
+mosquitto_pub -h 192.168.1.123 -t 'sonoff/1000xxxxxx/set' -m '{"switch":"on"}'
+
+# read the list of known devices
+mosquitto_sub -h 192.168.1.123 -t 'sonoff/bridge/devices' -C 1
+```
+
+State messages are retained by default, so a subscriber gets the last known state immediately. Disable **Retain state messages** if you don't want that.
 
 **Component review from DrZzs**
 

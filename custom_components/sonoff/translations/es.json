@@ -23,7 +23,10 @@
         "data": {
           "mode": "Modo (\"Auto\" es recomendado para la mayoría de usuarios)",
           "homes": "Casas (Dejar desmarcado para la casa \"actual\")",
-          "debug": "Página de depuración (link in notification and log)"
+          "debug": "Página de depuración (link in notification and log)",
+          "mqtt_enabled": "Puente MQTT (publicar estado y aceptar comandos por MQTT)",
+          "mqtt_prefix": "Prefijo de los topics MQTT",
+          "mqtt_retain": "Retener los mensajes de estado en el broker MQTT"
         }
       }
     }

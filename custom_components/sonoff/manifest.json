@@ -2,16 +2,18 @@
   "domain": "sonoff",
   "name": "Sonoff",
   "codeowners": [
-    "@AlexxIT"
+    "@AlexxIT",
+    "@Assidefok"
   ],
   "config_flow": true,
   "dependencies": [
     "http",
     "zeroconf"
   ],
-  "documentation": "https://github.com/AlexxIT/SonoffLAN",
+  "after_dependencies": ["mqtt"],
+  "documentation": "https://github.com/Assidefok/OpenSonoffMQTT",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/AlexxIT/SonoffLAN/issues",
+  "issue_tracker": "https://github.com/Assidefok/OpenSonoffMQTT",
   "requirements": [],
-  "version": "3.13.2"
+  "version": "3.14.0"
 }

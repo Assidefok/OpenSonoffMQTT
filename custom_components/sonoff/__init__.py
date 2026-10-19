@@ -32,6 +32,9 @@ from .core.const import (
     CONF_COUNTRY_CODE,
     CONF_DEFAULT_CLASS,
     CONF_DEVICEKEY,
+    CONF_MQTT_ENABLED,
+    CONF_MQTT_PREFIX,
+    CONF_MQTT_RETAIN,
     CONF_RFBRIDGE,
     DOMAIN,
 )
@@ -293,6 +296,30 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         _LOGGER.debug(f"Add {len(entities)} entities")
         registry.dispatcher_send(SIGNAL_ADD_ENTITIES, entities)
 
+    # optional MQTT bridge (OpenSonoffMQTT fork)
+    if config_entry.options.get(CONF_MQTT_ENABLED):
+        if "mqtt" in hass.config.components:
+            from .mqtt_bridge import MQTTBridge
+
+            bridge = MQTTBridge(
+                hass,
+                config_entry.entry_id,
+                registry,
+                prefix=config_entry.options.get(CONF_MQTT_PREFIX) or "sonoff",
+                retain=config_entry.options.get(CONF_MQTT_RETAIN, True),
+            )
+            try:
+                await bridge.async_start()
+            except Exception as e:
+                _LOGGER.warning("Can't start MQTT bridge", exc_info=e)
+                await bridge.async_stop()
+            else:
+                hass.data[DOMAIN][f"{config_entry.entry_id}_mqtt"] = bridge
+        else:
+            _LOGGER.warning(
+                "MQTT bridge is enabled, but the MQTT integration is not configured"
+            )
+
     return True
 
 
@@ -304,6 +331,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     registry: XRegistry = hass.data[DOMAIN][entry.entry_id]
+    if bridge := hass.data[DOMAIN].pop(f"{entry.entry_id}_mqtt", None):
+        await bridge.async_stop()
     await registry.stop()
 
     internal_free_devices(entry.entry_id)
