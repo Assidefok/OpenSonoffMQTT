@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation and troubleshooting
+    url: https://github.com/Assidefok/OpenSonoffMQTT#readme
+    about: Installation, the MQTT topics and the most common problems are documented there.
+  - name: Report a security issue privately
+    url: https://github.com/Assidefok/OpenSonoffMQTT/blob/master/CONTRIBUTING.md#security
+    about: Please do not open a public issue for vulnerabilities.
