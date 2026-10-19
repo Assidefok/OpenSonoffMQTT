@@ -1,6 +1,7 @@
 # Control Sonoff Devices from Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
+[![CI](https://github.com/Assidefok/OpenSonoffMQTT/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Assidefok/OpenSonoffMQTT/actions/workflows/ci.yml)
 
 > [!NOTE]
 > This is the **OpenSonoffMQTT** fork of [SonoffLAN](https://github.com/AlexxIT/SonoffLAN), published at [github.com/Assidefok/OpenSonoffMQTT](https://github.com/Assidefok/OpenSonoffMQTT). It adds an [MQTT bridge](#mqtt-bridge-opensonoffmqtt-fork) on top of upstream SonoffLAN.
@@ -35,6 +36,7 @@ Home Assistant custom component for control [Sonoff](https://www.itead.cc/) devi
 - [Common problems in only LAN mode](#common-problems-in-only-lan-mode)
 - [Raw commands](#raw-commands)
 - [Getting devicekey manually](#getting-devicekey-manually)
+- [Development](#development)
 - [Useful Links](#useful-links)
 
 </details>
@@ -547,3 +549,10 @@ mode: 0
 - https://github.com/itead/Sonoff_Devices_DIY_Tools
 - [SONOFF DIY MODE API PROTOCOL](http://developers.sonoff.tech/sonoff-diy-mode-api-protocol.html)
 - [No Tasmota And EWeLink Cloud To Control The SONOFF Device? YES!](https://sonoff.tech/product-tutorials/diy-mode-to-control-the-sonoff-device)
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the dev setup, local checks and the PR protocol.
+
+Continuous integration runs on every push and pull request: add-on unit tests (`pytest addon/tests`), ruff, metadata validation and the Docker build of the add-on. Pushing a `vX.Y.Z` tag creates the GitHub release and publishes the add-on image to `ghcr.io/assidefok/opensonoffmqtt`.
+

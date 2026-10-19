@@ -11,3 +11,11 @@ tests/test_0.py
 data/
 addon/data/
 *.pyc
+
+# python tooling
+.venv/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.pytest_tmp/
+pytest-cache-files-*/

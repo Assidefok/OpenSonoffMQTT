@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+# Vendored copies of the Home Assistant integration modules.
+extend-exclude = [
+    "addon/app/ewelink/base.py",
+    "addon/app/ewelink/cloud.py",
+    "addon/app/ewelink/local.py",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
