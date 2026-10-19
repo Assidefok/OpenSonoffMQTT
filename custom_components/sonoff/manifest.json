@@ -1,6 +1,8 @@
 {
   "domain": "sonoff",
   "name": "Sonoff",
+  "after_dependencies": ["mqtt"],
+  "categories": ["hub"],
   "codeowners": [
     "@AlexxIT",
     "@Assidefok"
@@ -10,7 +12,6 @@
     "http",
     "zeroconf"
   ],
-  "after_dependencies": ["mqtt"],
   "documentation": "https://github.com/Assidefok/OpenSonoffMQTT",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/Assidefok/OpenSonoffMQTT",
