@@ -2,7 +2,6 @@
   "domain": "sonoff",
   "name": "Sonoff",
   "after_dependencies": ["mqtt"],
-  "categories": ["hub"],
   "codeowners": [
     "@AlexxIT",
     "@Assidefok"
