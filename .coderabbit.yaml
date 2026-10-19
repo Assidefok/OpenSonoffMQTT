@@ -1,0 +1,47 @@
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    base_branches:
+      - master
+  path_filters:
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.svg"
+    - "!**/*.min.js"
+    - "!docs/**"
+    - "!addon/app/static/**"
+  path_instructions:
+    - path: "addon/app/**"
+      instructions: >-
+        Stand-alone app (no Home Assistant imports). Keep it async, never block
+        the event loop, and keep the MQTT topic contract in
+        addon/app/mqtt_bridge.py in sync with custom_components/sonoff/mqtt_bridge.py.
+    - path: "custom_components/sonoff/**"
+      instructions: >-
+        Home Assistant custom integration. Do not add blocking calls in the
+        event loop and keep the vendored eWeLink modules in sync with
+        addon/app/ewelink.
+    - path: ".github/workflows/**"
+      instructions: >-
+        Workflows must stay green on forks: no secrets in pull_request-triggered
+        jobs and minimal permissions.
+    - path: "addon/tests/**"
+      instructions: >-
+        Tests must not require Home Assistant; third-party packages are stubbed
+        in addon/tests/conftest.py only when they are not installed.
+
+chat:
+  auto_reply: true

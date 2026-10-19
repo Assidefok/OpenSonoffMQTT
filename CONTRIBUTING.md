@@ -66,12 +66,40 @@ CONFIG_PATH=./data/config.json python -m uvicorn app.main:app --port 8099
 3. Make sure CI is green. The `CI` workflow runs the add-on tests, ruff, the
    metadata validation, the Docker build and the PR title check; the `HACS
    validation` workflow runs hassfest/HACS checks.
-4. A code owner (`@Assidefok`) reviews the PR. At least one approving review is
-   required, plus green checks.
-5. PRs are merged with **Squash and merge**; the branch is deleted afterwards.
+4. A code owner (`@Assidefok`) reviews the PR. Keep the PR small and linked to
+   its issue; the review is what keeps `master` trustworthy.
+5. PRs are merged with **Squash and merge**; the branch is deleted afterwards,
+   and history stays linear.
 6. Do not force-push `master` and do not merge your own PR without review.
-7. Dependabot PRs follow the same rules: wait for green CI, then merge. Groups
-   are configured in `.github/dependabot.yml` (weekly, Monday).
+7. Dependabot PRs are handled by automation (see below): patch and minor
+   updates merge by themselves once every required check passes; major updates
+   wait for a human.
+
+## Automation
+
+The repository runs itself as much as possible:
+
+- **Branch protection** (`protect-master` ruleset): `master` only accepts pull
+  requests. Required checks: `Add-on tests`, `Lint`, `Validate metadata`,
+  `Build add-on image`, `PR title`, `HACS`, `Hassfest`. Force pushes and branch
+  deletions are blocked.
+- **Dependabot** ([`.github/dependabot.yml`](.github/dependabot.yml)) opens
+  weekly PRs for pip (`/addon`, `/scripts`), Docker (`/addon`) and GitHub
+  Actions. Commit messages use `chore(deps): ...`, so they pass the PR title
+  check.
+- **Dependabot auto-merge**
+  ([`.github/workflows/dependabot-auto-merge.yml`](.github/workflows/dependabot-auto-merge.yml))
+  enables auto-merge (squash) for **patch and minor** updates as soon as every
+  required check is green; major updates get a comment and stay open.
+- **`automerge` label**: add it to any PR and
+  [`automerge.yml`](.github/workflows/automerge.yml) enables auto-merge once the
+  required checks pass.
+- **CodeRabbit** ([`.coderabbit.yaml`](.coderabbit.yaml)) reviews PRs
+  automatically once the
+  [CodeRabbit GitHub App](https://github.com/apps/coderabbitai) is installed on
+  the repository.
+- **Dependabot alerts and security updates** are enabled in the repository
+  settings, so vulnerable dependencies get a PR as soon as one is published.
 
 ## Releases (maintainers)
 

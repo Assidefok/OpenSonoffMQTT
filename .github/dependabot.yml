@@ -6,30 +6,34 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
-    groups:
-      addon-python:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: pip
     directory: /scripts
     schedule:
       interval: weekly
     open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: docker
     directory: /addon
     schedule:
       interval: weekly
       day: monday
+    commit-message:
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
-    groups:
-      actions:
-        patterns:
-          - "*"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
