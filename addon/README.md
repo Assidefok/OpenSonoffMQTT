@@ -4,6 +4,8 @@ Control your Sonoff / eWeLink devices and publish them over MQTT — the same
 topic contract as the [OpenSonoffMQTT Home Assistant integration](../README.md),
 but running as a stand-alone app.
 
+![OpenSonoffMQTT web interface](../docs/app.png)
+
 ---
 
 ## Install as a Home Assistant add-on

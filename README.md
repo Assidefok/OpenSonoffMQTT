@@ -131,6 +131,8 @@ State messages are retained by default, so a subscriber gets the last known stat
 
 The same bridge also runs as an app with its own web page, without the Home Assistant integration:
 
+![OpenSonoffMQTT web interface](docs/app.png)
+
 1. **Settings > Add-ons > Add-on store > ⋮ > Repositories** - add `https://github.com/Assidefok/OpenSonoffMQTT`, then install **OpenSonoffMQTT**, click **Start** and **Open Web UI**.
 2. Enter your eWeLink account and the MQTT broker (on HAOS with the Mosquitto add-on: `core-mosquitto`, port `1883`).
 3. Click **Save & connect**.
