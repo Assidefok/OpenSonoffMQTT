@@ -135,7 +135,9 @@ The same bridge also runs as an app with its own web page, without the Home Assi
 
 ![OpenSonoffMQTT web interface](docs/app.png)
 
-1. **Settings > Add-ons > Add-on store > ⋮ > Repositories** - add `https://github.com/Assidefok/OpenSonoffMQTT`, then install **OpenSonoffMQTT**, click **Start** and **Open Web UI**.
+[![](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FAssidefok%2FOpenSonoffMQTT)
+
+1. **Settings > Add-ons > Add-on store > ⋮ > Repositories** - add `https://github.com/Assidefok/OpenSonoffMQTT` (or use the button above), then install **OpenSonoffMQTT**, click **Start** and **Open Web UI**.
 2. Enter your eWeLink account and the MQTT broker (on HAOS with the Mosquitto add-on: `core-mosquitto`, port `1883`).
 3. Click **Save & connect**.
 
@@ -150,9 +152,12 @@ Thanks to [@michthom](https://github.com/michthom) and [@EpicLPer](https://githu
 
 ## Installation
 
-[![](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AlexxIT&repository=SonoffLAN&category=Integration)
+[![](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Assidefok&repository=OpenSonoffMQTT&category=integration)
 
-Via [HACS](https://hacs.xyz/) or manually copy `sonoff` folder from [latest release](https://github.com/AlexxIT/SonoffLAN/releases/latest) to `custom_components` folder in your config folder.
+Via [HACS](https://hacs.xyz/) or manually copy `sonoff` folder from [latest release](https://github.com/Assidefok/OpenSonoffMQTT/releases/latest) to `custom_components` folder in your config folder.
+
+> [!NOTE]
+> OpenSonoffMQTT is not in the HACS default list: the button adds it as a **custom repository** (`Assidefok/OpenSonoffMQTT`, category *integration*).
 
 ## Configuration
 
@@ -167,7 +172,7 @@ Before posting new issue:
 1. Check the number of online devices on the [System Health page](https://my.home-assistant.io/redirect/system_health)
 2. Check warning and errors on the [Logs page](https://my.home-assistant.io/redirect/logs/)
 3. Check **debug logs** on the [Debug page](#debug-page) (must be enabled in integration options)
-4. Check **open and closed** [issues](https://github.com/AlexxIT/SonoffLAN/issues?q=is%3Aissue)
+4. Check **open and closed** [issues](https://github.com/Assidefok/OpenSonoffMQTT/issues?q=is%3Aissue)
 5. Share integration [diagnostics](https://www.home-assistant.io/integrations/diagnostics/):
    - All devices: Settings > [Integrations](https://my.home-assistant.io/redirect/integrations/) > **Sonoff** > 3 dots > Download diagnostics
    - One device: Settings > [Devices](https://my.home-assistant.io/redirect/devices/) > Device > Download diagnostics

@@ -10,6 +10,10 @@ but running as a stand-alone app.
 
 ## Install as a Home Assistant add-on
 
+[![](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FAssidefok%2FOpenSonoffMQTT)
+
+Or add the repository manually:
+
 1. In Home Assistant go to **Settings > Add-ons > Add-on store**.
 2. Click the **three dots** in the top-right corner and choose **Repositories**.
 3. Paste the repository URL and click **Add**:
