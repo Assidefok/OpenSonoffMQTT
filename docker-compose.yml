@@ -1,0 +1,11 @@
+services:
+  opensonoffmqtt:
+    build: ./addon
+    container_name: opensonoffmqtt
+    ports:
+      - "8099:8099"
+    volumes:
+      - ./data:/data
+    environment:
+      - CONFIG_PATH=/data/config.json
+    restart: unless-stopped

@@ -6,3 +6,8 @@ __pycache__/
 .idea/
 
 tests/test_0.py
+
+# standalone add-on
+data/
+addon/data/
+*.pyc

@@ -124,7 +124,17 @@ State messages are retained by default, so a subscriber gets the last known stat
 ### Status
 
 - **Tested with** the Mosquitto broker (Home Assistant add-on or standalone) and other standard MQTT brokers.
-- **Not yet:** a standalone add-on / app with its own web page is planned next. For now everything is configured inside Home Assistant.
+- **Also available as an app:** the [stand-alone add-on](addon/README.md) runs the same MQTT bridge with its own web page (Home Assistant add-on or Docker).
+
+## Stand-alone app (add-on / Docker)
+
+The same bridge also runs as an app with its own web page, without the Home Assistant integration:
+
+1. **Settings > Add-ons > Add-on store > ⋮ > Repositories** - add `https://github.com/Assidefok/OpenSonoffMQTT`, then install **OpenSonoffMQTT**, click **Start** and **Open Web UI**.
+2. Enter your eWeLink account and the MQTT broker (on HAOS with the Mosquitto add-on: `core-mosquitto`, port `1883`).
+3. Click **Save & connect**.
+
+It can also run anywhere with Docker: `docker compose up -d` and open <http://localhost:8099>. Full guide: [addon/README.md](addon/README.md).
 
 **Component review from DrZzs**
 

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenSonoffMQTT</title>
+    <link rel="stylesheet" href="static/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">◉</span>
+        <div>
+          <h1>OpenSonoffMQTT</h1>
+          <p class="subtitle">Sonoff / eWeLink → MQTT</p>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge" id="badge-ewelink">eWeLink: …</span>
+        <span class="badge" id="badge-mqtt">MQTT: …</span>
+      </div>
+    </header>
+
+    <main>
+      <form id="config-form" autocomplete="off">
+        <section class="grid">
+          <div class="card">
+            <h2>1. eWeLink account</h2>
+            <p class="hint">The same email and password you use in the eWeLink app.</p>
+
+            <label for="ew-username">Email or phone</label>
+            <input id="ew-username" name="username" type="text" placeholder="you@example.com" required />
+
+            <label for="ew-password">Password</label>
+            <input id="ew-password" name="password" type="password" placeholder="Password" />
+
+            <label for="ew-country">Country code <span class="optional">(optional)</span></label>
+            <input id="ew-country" name="country_code" type="text" placeholder="+34" />
+          </div>
+
+          <div class="card">
+            <h2>2. MQTT broker</h2>
+            <p class="hint">
+              On Home Assistant OS with the Mosquitto add-on use <code>core-mosquitto</code> and
+              port <code>1883</code>.
+            </p>
+
+            <div class="row">
+              <div class="grow">
+                <label for="mq-host">Broker address</label>
+                <input id="mq-host" name="host" type="text" placeholder="core-mosquitto" required />
+              </div>
+              <div class="port">
+                <label for="mq-port">Port</label>
+                <input id="mq-port" name="port" type="number" min="1" max="65535" value="1883" />
+              </div>
+            </div>
+
+            <label for="mq-username">Username <span class="optional">(optional)</span></label>
+            <input id="mq-username" name="username" type="text" />
+
+            <label for="mq-password">Password <span class="optional">(optional)</span></label>
+            <input id="mq-password" name="password" type="password" />
+
+            <div class="row checks">
+              <label class="check"><input id="mq-tls" name="tls" type="checkbox" /> Use TLS/SSL</label>
+              <label class="check"><input id="mq-retain" name="retain" type="checkbox" checked /> Retain state</label>
+            </div>
+
+            <label for="mq-prefix">Topic prefix</label>
+            <input id="mq-prefix" name="prefix" type="text" value="sonoff" />
+          </div>
+        </section>
+
+        <div class="actions">
+          <button id="save" type="submit">Save &amp; connect</button>
+          <span id="toast" class="toast" role="status"></span>
+        </div>
+      </form>
+
+      <section class="card devices">
+        <div class="card-head">
+          <h2>Devices</h2>
+          <span class="hint" id="device-count"></span>
+        </div>
+        <p id="devices-empty" class="hint">No devices yet. Save the configuration to connect.</p>
+        <ul id="devices" class="device-list"></ul>
+      </section>
+
+      <section class="card logs">
+        <details>
+          <summary>Logs</summary>
+          <pre id="logs"></pre>
+        </details>
+      </section>
+    </main>
+
+    <script src="static/app.js"></script>
+  </body>
+</html>
