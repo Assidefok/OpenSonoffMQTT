@@ -13,8 +13,24 @@ permissions:
   contents: write
 
 jobs:
+  tests:
+    name: Add-on tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: addon/requirements.txt
+      - name: Install dependencies
+        run: pip install -r addon/requirements.txt pytest
+      - name: Run tests
+        run: pytest addon/tests -q
+
   release:
     name: GitHub release
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +53,7 @@ jobs:
 
   docker:
     name: Publish add-on image
+    needs: tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
