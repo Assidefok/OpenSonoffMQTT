@@ -5,7 +5,9 @@
     },
     "error": {
       "exists": "This account is already configured",
-      "template": "{error}"
+      "template": "{error}",
+      "cannot_connect": "Can't reach the MQTT broker. Check the address, port and credentials.",
+      "invalid_auth": "The MQTT broker rejected the username or password."
     },
     "step": {
       "user": {
@@ -14,6 +16,20 @@
           "username": "Email or phone (use any for DIY mode)",
           "password": "Password (leave blank for DIY mode)",
           "country_code": "Country code (leave blank for auto select)"
+        }
+      },
+      "mqtt": {
+        "title": "MQTT bridge",
+        "description": "Publish your Sonoff devices over MQTT so any app can read and control them. The fields are already filled with your broker details when Home Assistant has MQTT configured.\n\n{broker_hint}",
+        "data": {
+          "mqtt_enabled": "Enable the MQTT bridge",
+          "mqtt_host": "Broker address",
+          "mqtt_port": "Port",
+          "mqtt_username": "Username (optional)",
+          "mqtt_password": "Password (optional)",
+          "mqtt_tls": "Use TLS/SSL",
+          "mqtt_prefix": "Topic prefix",
+          "mqtt_retain": "Retain state messages"
         }
       }
     }
@@ -25,9 +41,14 @@
           "mode": "Mode (auto is recommended for most users)",
           "homes": "Homes (leave blank for active home in mobile app)",
           "debug": "Debug page (link in notification and log)",
-          "mqtt_enabled": "MQTT bridge (publish device state and accept commands over MQTT)",
-          "mqtt_prefix": "MQTT topic prefix",
-          "mqtt_retain": "Retain state messages in the MQTT broker"
+          "mqtt_enabled": "Enable the MQTT bridge",
+          "mqtt_host": "Broker address",
+          "mqtt_port": "Port",
+          "mqtt_username": "Username (optional)",
+          "mqtt_password": "Password (optional)",
+          "mqtt_tls": "Use TLS/SSL",
+          "mqtt_prefix": "Topic prefix",
+          "mqtt_retain": "Retain state messages"
         }
       }
     }

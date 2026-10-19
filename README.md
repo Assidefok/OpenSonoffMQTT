@@ -61,9 +61,37 @@ A list of known devices can be found here - [DEVICES](DEVICES.md).
 
 ## MQTT bridge (OpenSonoffMQTT fork)
 
-This fork can expose Sonoff devices over MQTT. It reuses the MQTT broker already configured in the official [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) - no second broker configuration is needed. The MQTT integration must be set up before enabling the bridge.
+This fork can expose Sonoff devices over MQTT. The bridge uses its own MQTT client (`paho-mqtt`), so the official [MQTT integration](https://www.home-assistant.io/integrations/mqtt/) is **optional** - it is only used to pre-fill the broker settings. No YAML is needed.
 
-Enable it in the integration options: Settings > [Integrations](https://my.home-assistant.io/redirect/integrations/) > **Sonoff** > Configure (gear) > enable **MQTT bridge**, set **MQTT topic prefix** (default `sonoff`) and **Retain state messages**.
+### Step-by-step setup
+
+1. Add this repository to HACS: **HACS** > 3 dots > **Custom repositories**, enter `https://github.com/Assidefok/OpenSonoffMQTT` with category **Integration**.
+2. Install **OpenSonoffMQTT** from HACS.
+3. **Restart Home Assistant**.
+4. Go to Settings > [Devices & services](https://my.home-assistant.io/redirect/devices/) > **Add integration** > **Sonoff**.
+5. Enter your **eWeLink account** and press **Next**.
+6. On the new **MQTT bridge** step fill in:
+   - **Broker address** and **port** (usually `1883`)
+   - **Username** and **password**, if your broker requires them
+   - **TLS**, if your broker uses encryption
+   - **Topic prefix**, default `sonoff`
+   - **Retain state messages**, default on
+7. Press **Submit**. The wizard tests the connection immediately. If the broker can't be reached it shows **"Can't reach the MQTT broker..."** and lets you fix the fields and try again.
+
+> [!TIP]
+> Broker, port, credentials and TLS are pre-filled when the official MQTT integration is already configured. On Home Assistant OS without it, the suggested address is `core-mosquitto` (the Mosquitto add-on host) - the wizard description mentions this too.
+
+Settings can be changed later: Settings > [Integrations](https://my.home-assistant.io/redirect/integrations/) > **Sonoff** > **Configure** (gear). Saving the options also tests the connection.
+
+### If something fails
+
+- **Wrong host or port** - use the address of the machine running the broker (not `localhost`, unless both run on the same host).
+- **Authentication rejected** - check the username and password, and that this broker user exists.
+- **Home Assistant OS + Mosquitto add-on** - the broker host is `core-mosquitto` and the port is `1883`.
+- **Broker is not running** - start it (for the Mosquitto add-on: check that the add-on is started and read its log).
+- **Port 1883 blocked** - make sure no firewall or Docker network setup blocks the connection from Home Assistant to the broker.
+
+### Topics
 
 Topics with the default prefix:
 
@@ -89,7 +117,14 @@ mosquitto_pub -h 192.168.1.123 -t 'sonoff/1000xxxxxx/set' -m '{"switch":"on"}'
 mosquitto_sub -h 192.168.1.123 -t 'sonoff/bridge/devices' -C 1
 ```
 
+If the broker requires authentication, add `-u <user>` and `-P <password>` to the commands.
+
 State messages are retained by default, so a subscriber gets the last known state immediately. Disable **Retain state messages** if you don't want that.
+
+### Status
+
+- **Tested with** the Mosquitto broker (Home Assistant add-on or standalone) and other standard MQTT brokers.
+- **Not yet:** a standalone add-on / app with its own web page is planned next. For now everything is configured inside Home Assistant.
 
 **Component review from DrZzs**
 

@@ -26,7 +26,10 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
     except Exception as e:
         config = repr(e)
 
-    options = {k: len(v) if k == "homes" else v for k, v in entry.options.items()}
+    options = {
+        k: "***" if "password" in k else len(v) if k == "homes" else v
+        for k, v in entry.options.items()
+    }
 
     registry: XRegistry = hass.data[DOMAIN][entry.entry_id]
     try:

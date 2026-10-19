@@ -5,7 +5,9 @@
     },
     "error": {
       "exists": "Esta cuenta ya se encuentra configurada.",
-      "template": "{error}"
+      "template": "{error}",
+      "cannot_connect": "No se puede conectar al broker MQTT. Revisa la dirección, el puerto y las credenciales.",
+      "invalid_auth": "El broker MQTT ha rechazado el usuario o la contraseña."
     },
     "step": {
       "user": {
@@ -13,6 +15,20 @@
         "data": {
           "username": "Email o teléfono (Use cualquiera para el modo DIY)",
           "password": "Contraseña (Dejar en blanco para el modo DIY)"
+        }
+      },
+      "mqtt": {
+        "title": "Puente MQTT",
+        "description": "Publica tus dispositivos Sonoff por MQTT para que cualquier aplicación pueda leerlos y controlarlos. Los campos ya vienen rellenos con tu broker si Home Assistant tiene MQTT configurado.\n\n{broker_hint}",
+        "data": {
+          "mqtt_enabled": "Activar el puente MQTT",
+          "mqtt_host": "Dirección del broker",
+          "mqtt_port": "Puerto",
+          "mqtt_username": "Usuario (opcional)",
+          "mqtt_password": "Contraseña (opcional)",
+          "mqtt_tls": "Usar TLS/SSL",
+          "mqtt_prefix": "Prefijo de los topics",
+          "mqtt_retain": "Retener los mensajes de estado"
         }
       }
     }
@@ -24,9 +40,14 @@
           "mode": "Modo (\"Auto\" es recomendado para la mayoría de usuarios)",
           "homes": "Casas (Dejar desmarcado para la casa \"actual\")",
           "debug": "Página de depuración (link in notification and log)",
-          "mqtt_enabled": "Puente MQTT (publicar estado y aceptar comandos por MQTT)",
-          "mqtt_prefix": "Prefijo de los topics MQTT",
-          "mqtt_retain": "Retener los mensajes de estado en el broker MQTT"
+          "mqtt_enabled": "Activar el puente MQTT",
+          "mqtt_host": "Dirección del broker",
+          "mqtt_port": "Puerto",
+          "mqtt_username": "Usuario (opcional)",
+          "mqtt_password": "Contraseña (opcional)",
+          "mqtt_tls": "Usar TLS/SSL",
+          "mqtt_prefix": "Prefijo de los topics",
+          "mqtt_retain": "Retener los mensajes de estado"
         }
       }
     }

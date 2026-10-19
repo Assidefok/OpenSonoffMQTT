@@ -1,8 +1,9 @@
-"""MQTT bridge for Sonoff devices.
+"""MQTT bridge for Sonoff devices (OpenSonoffMQTT fork).
 
-OpenSonoffMQTT fork feature. It reuses the MQTT broker already configured in
-Home Assistant (the official ``mqtt`` integration), so there is no second
-broker configuration and no second connection to eWeLink.
+Publishes device state to an MQTT broker and accepts commands from it.
+The bridge ships its own MQTT client (paho-mqtt), so the Home Assistant MQTT
+integration is optional: the wizard fills the broker details from it when it
+is configured, otherwise the user can point to any broker.
 
 Topics (``<prefix>`` is configurable, ``sonoff`` by default):
 
@@ -18,18 +19,31 @@ Topics (``<prefix>`` is configurable, ``sonoff`` by default):
 short form: ``ON`` / ``OFF`` / ``TOGGLE``.
 """
 
+import asyncio
 import json
 import logging
 from typing import Callable
 
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 
-from .core.const import PRIVATE_KEYS
+from .core.const import (
+    CONF_MQTT_ENABLED,
+    CONF_MQTT_HOST,
+    CONF_MQTT_PASSWORD,
+    CONF_MQTT_PORT,
+    CONF_MQTT_PREFIX,
+    CONF_MQTT_RETAIN,
+    CONF_MQTT_TLS,
+    CONF_MQTT_USERNAME,
+    PRIVATE_KEYS,
+)
 from .core.ewelink import SIGNAL_DEVICE_ADDED, XDevice, XRegistry
+from .core.mqtt_client import MQTTClient
 
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_PREFIX = "sonoff"
+DEFAULT_PORT = 1883
 
 SHORT_COMMANDS = {
     "on": "on",
@@ -50,6 +64,81 @@ def _clean_prefix(prefix: str | None) -> str:
     return prefix
 
 
+def _mqtt_integration_data(hass: HomeAssistant) -> dict:
+    """Broker settings of the official MQTT integration, if configured."""
+    entry = next(iter(hass.config_entries.async_entries("mqtt")), None)
+    if entry is None:
+        return {}
+    return {**entry.data, **entry.options}
+
+
+def suggested_defaults(hass: HomeAssistant) -> dict:
+    """Pre-filled broker settings so the setup wizard is one click for most."""
+    defaults = {
+        "host": "localhost",
+        "port": DEFAULT_PORT,
+        "username": "",
+        "password": "",
+        "tls": False,
+    }
+
+    data = _mqtt_integration_data(hass)
+    if data:
+        certificate = str(data.get("certificate") or "").lower()
+        defaults.update(
+            host=data.get("broker") or defaults["host"],
+            port=int(data.get("port") or DEFAULT_PORT),
+            username=data.get("username") or "",
+            password=data.get("password") or "",
+            tls=certificate in ("auto", "custom"),
+        )
+        return defaults
+
+    if "hassio" in getattr(hass.config, "components", ()):
+        # Home Assistant OS with the Mosquitto add-on
+        defaults["host"] = "core-mosquitto"
+
+    return defaults
+
+
+def _config_from_options(options: dict) -> dict | None:
+    host = options.get(CONF_MQTT_HOST)
+    if not host:
+        return None
+    return {
+        "host": host,
+        "port": int(options.get(CONF_MQTT_PORT) or DEFAULT_PORT),
+        "username": options.get(CONF_MQTT_USERNAME) or None,
+        "password": options.get(CONF_MQTT_PASSWORD) or None,
+        "tls": bool(options.get(CONF_MQTT_TLS, False)),
+        "prefix": options.get(CONF_MQTT_PREFIX) or DEFAULT_PREFIX,
+        "retain": bool(options.get(CONF_MQTT_RETAIN, True)),
+    }
+
+
+def _config_from_hass(hass: HomeAssistant, options: dict) -> dict | None:
+    data = _mqtt_integration_data(hass)
+    if not data.get("broker"):
+        return None
+    certificate = str(data.get("certificate") or "").lower()
+    return {
+        "host": data["broker"],
+        "port": int(data.get("port") or DEFAULT_PORT),
+        "username": data.get("username") or None,
+        "password": data.get("password") or None,
+        "tls": certificate in ("auto", "custom"),
+        "prefix": options.get(CONF_MQTT_PREFIX) or DEFAULT_PREFIX,
+        "retain": bool(options.get(CONF_MQTT_RETAIN, True)),
+    }
+
+
+def resolve_config(hass: HomeAssistant, options: dict) -> dict | None:
+    """Return the MQTT settings to use, or None when the bridge is disabled."""
+    if not options.get(CONF_MQTT_ENABLED):
+        return None
+    return _config_from_options(options) or _config_from_hass(hass, options)
+
+
 class MQTTBridge:
     """Publish Sonoff device state to MQTT and accept commands from MQTT."""
 
@@ -58,52 +147,44 @@ class MQTTBridge:
         hass: HomeAssistant,
         entry_id: str,
         registry: XRegistry,
-        prefix: str = DEFAULT_PREFIX,
-        retain: bool = True,
+        config: dict,
     ) -> None:
         self.hass = hass
-        self.entry_id = entry_id
         self.registry = registry
-        self.prefix = _clean_prefix(prefix)
-        self.retain = retain
+        self.prefix = _clean_prefix(config.get("prefix"))
+        self.retain = config.get("retain", True)
 
-        self._mqtt = None
+        self._client = MQTTClient(
+            host=config["host"],
+            port=config.get("port", DEFAULT_PORT),
+            username=config.get("username"),
+            password=config.get("password"),
+            tls=config.get("tls", False),
+            client_id=f"sonoff-{entry_id[:12]}",
+            subscriptions=(f"{self.prefix}/+/set", f"{self.prefix}/+/get"),
+            on_connect=self._client_connected,
+            on_message=self._client_message,
+        )
+
         self._unsubs: list[Callable[[], None]] = []
         self._device_unsubs: dict[str, Callable[[], None]] = {}
 
     # lifecycle
 
     async def async_start(self) -> None:
-        from homeassistant.components import mqtt
-
-        self._mqtt = mqtt
-
-        self._unsubs.append(
-            await mqtt.async_subscribe(
-                self.hass, f"{self.prefix}/+/set", self._handle_set
-            )
-        )
-        self._unsubs.append(
-            await mqtt.async_subscribe(
-                self.hass, f"{self.prefix}/+/get", self._handle_get
-            )
-        )
         self._unsubs.append(
             self.registry.dispatcher_connect(SIGNAL_DEVICE_ADDED, self._device_added)
         )
-
         for device in list(self.registry.devices.values()):
             self._track_device(device)
 
-        await self._publish(f"{self.prefix}/bridge/status", "online", retain=True)
-        for did in list(self.registry.devices.keys()):
-            await self._async_publish_state(did)
-        await self._async_publish_device_list()
+        self._client.start()
 
         _LOGGER.info(
-            "MQTT bridge started on prefix %s with %d devices",
+            "MQTT bridge starting for %s:%s, prefix %s",
+            self._client.host,
+            self._client.port,
             self.prefix,
-            len(self.registry.devices),
         )
 
     async def async_stop(self) -> None:
@@ -115,14 +196,35 @@ class MQTTBridge:
             unsub()
         self._device_unsubs.clear()
 
+        self._publish(f"{self.prefix}/bridge/status", "offline", retain=True)
+        # give the network thread a moment to flush the last retained message
+        await asyncio.sleep(0.2)
+        self._client.stop()
+
+    # paho callbacks: they run in the paho network thread
+
+    def _client_connected(self) -> None:
+        self._schedule(self._async_on_connected())
+
+    def _client_message(self, topic: str, payload: bytes) -> None:
+        self._schedule(self._async_handle_message(topic, payload))
+
+    def _schedule(self, coro) -> None:
         try:
-            await self._publish(f"{self.prefix}/bridge/status", "offline", retain=True)
-        except Exception:  # noqa: BLE001 - broker may be gone during shutdown
-            pass
+            asyncio.run_coroutine_threadsafe(coro, self.hass.loop)
+        except RuntimeError:
+            coro.close()
 
-        self._mqtt = None
+    async def _async_on_connected(self) -> None:
+        _LOGGER.info(
+            "MQTT bridge connected to %s:%s", self._client.host, self._client.port
+        )
+        self._publish(f"{self.prefix}/bridge/status", "online", retain=True)
+        for did in list(self.registry.devices.keys()):
+            await self._async_publish_state(did)
+        await self._async_publish_device_list()
 
-    # subscription helpers
+    # subscriptions
 
     def _track_device(self, device: XDevice) -> None:
         did = device["deviceid"]
@@ -134,66 +236,64 @@ class MQTTBridge:
 
         self._device_unsubs[did] = self.registry.dispatcher_connect(did, update)
 
-    @callback
     def _device_added(self, device: XDevice) -> None:
         self._track_device(device)
         self.hass.async_create_task(self._async_publish_state(device["deviceid"]))
         self.hass.async_create_task(self._async_publish_device_list())
 
-    # MQTT callbacks
+    # MQTT messages
 
-    @callback
-    def _handle_set(self, msg) -> None:
-        parsed = self._parse_topic(msg.topic)
-        if not parsed or parsed[1] != "set":
+    async def _async_handle_message(self, topic: str, payload: bytes) -> None:
+        parsed = self._parse_topic(topic)
+        if not parsed:
             return
 
-        did = parsed[0]
+        did, action = parsed
+        if isinstance(payload, bytes):
+            text = payload.decode("utf-8", "replace")
+        else:
+            text = payload
+
+        if action == "get":
+            await self._async_publish_state(did)
+            return
+
         device = self.registry.devices.get(did)
         if device is None:
             # another config entry (eWeLink account) may own this device
             _LOGGER.debug("MQTT bridge: unknown device %s", did)
             return
 
-        params = self._parse_payload(msg.payload)
+        params = self._parse_payload(text)
         if params is None:
-            _LOGGER.warning(
-                "MQTT bridge: invalid payload for %s: %r", did, msg.payload
-            )
+            _LOGGER.warning("MQTT bridge: invalid payload for %s: %r", did, text)
             return
 
-        self.hass.async_create_task(self._async_send(device, params))
-
-    @callback
-    def _handle_get(self, msg) -> None:
-        parsed = self._parse_topic(msg.topic)
-        if not parsed or parsed[1] != "get":
-            return
-        self.hass.async_create_task(self._async_publish_state(parsed[0]))
-
-    # actions
-
-    async def _async_send(self, device: XDevice, params: dict) -> None:
         try:
             await self.registry.send(device, params)
         except Exception as e:  # noqa: BLE001 - never break the MQTT loop
             _LOGGER.warning(
-                "MQTT bridge: can't send %s to %s",
-                params,
-                device["deviceid"],
-                exc_info=e,
+                "MQTT bridge: can't send %s to %s", params, did, exc_info=e
             )
+
+    # publishing
+
+    def _publish(self, topic: str, payload: str, retain: bool | None = None) -> None:
+        self._client.publish(
+            topic, payload, retain=self.retain if retain is None else retain
+        )
 
     async def _async_publish_state(self, did: str) -> None:
         device = self.registry.devices.get(did)
         if device is None:
             return
 
-        payload = json.dumps(self._snapshot(device), default=str)
-        await self._publish(
-            f"{self.prefix}/{did}/state", payload, retain=self.retain
+        self._publish(
+            f"{self.prefix}/{did}/state",
+            json.dumps(self._snapshot(device), default=str),
+            retain=self.retain,
         )
-        await self._publish(
+        self._publish(
             f"{self.prefix}/{did}/availability",
             "online" if self._is_online(device) else "offline",
             retain=True,
@@ -211,23 +311,10 @@ class MQTTBridge:
             ),
             key=lambda d: (d["name"] or "", d["deviceid"] or ""),
         )
-        await self._publish(
+        self._publish(
             f"{self.prefix}/bridge/devices",
             json.dumps(devices, default=str),
             retain=True,
-        )
-
-    async def _publish(
-        self, topic: str, payload: str, retain: bool | None = None
-    ) -> None:
-        if self._mqtt is None:
-            return
-        await self._mqtt.async_publish(
-            self.hass,
-            topic,
-            payload,
-            qos=0,
-            retain=self.retain if retain is None else retain,
         )
 
     # helpers
