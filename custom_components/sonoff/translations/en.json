@@ -37,6 +37,7 @@
   "options": {
     "step": {
       "init": {
+        "description": "Leave the MQTT password blank to keep the saved one.",
         "data": {
           "mode": "Mode (auto is recommended for most users)",
           "homes": "Homes (leave blank for active home in mobile app)",

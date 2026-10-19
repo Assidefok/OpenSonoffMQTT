@@ -72,3 +72,12 @@ Docker you can set `LOG_LEVEL` (for example `LOG_LEVEL=debug`) in the compose
   arrive from both.
 - DIY devices that only exist on the LAN are added automatically.
 
+## Security
+
+When installed as a Home Assistant add-on, the web page is protected by Home
+Assistant's login (ingress). If you run it with Docker and expose port `8099`
+to your network, put it behind a reverse proxy with authentication or only
+expose it on a trusted LAN: anyone who can open the page can control your
+devices and change the configuration.
+
+

@@ -21,6 +21,7 @@ Home Assistant custom component for control [Sonoff](https://www.itead.cc/) devi
   * [Debug page](#debug-page)
   * [Homes](#homes)
 - [MQTT bridge](#mqtt-bridge-opensonoffmqtt-fork)
+- [Stand-alone app (add-on / Docker)](#stand-alone-app-add-on--docker)
 - [Configuration YAML](#configuration-yaml)
   * [Custom device_class](#custom-device-class)
   * [Custom devices](#custom-devices)

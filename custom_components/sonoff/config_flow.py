@@ -157,6 +157,15 @@ class OptionsFlowHandler(OptionsFlow):
         errors = {}
 
         if data is not None:
+            # an empty password means "keep the saved one"
+            data = dict(data)
+            if not data.get(CONF_MQTT_PASSWORD):
+                data[CONF_MQTT_PASSWORD] = (
+                    self.config_entry.options.get(CONF_MQTT_PASSWORD)
+                    or self.config_entry.data.get(CONF_MQTT_PASSWORD)
+                    or ""
+                )
+
             if data.get(CONF_MQTT_ENABLED):
                 error = await async_check_mqtt(self.hass, data)
                 if error:
@@ -188,7 +197,7 @@ class OptionsFlowHandler(OptionsFlow):
                 vol.Optional(CONF_MODE, default="auto"): vol.In(CONF_MODES),
                 vol.Optional(CONF_DEBUG, default=False): bool,
                 vol.Optional("homes"): cv.multi_select(homes),
-                **_mqtt_schema(self.hass, values),
+                **_mqtt_schema(self.hass, values, prefill_password=False),
             },
             {**self.config_entry.options, **values},
         )
@@ -197,7 +206,9 @@ class OptionsFlowHandler(OptionsFlow):
         )
 
 
-def _mqtt_schema(hass, values: dict | None = None) -> dict:
+def _mqtt_schema(
+    hass, values: dict | None = None, prefill_password: bool = True
+) -> dict:
     suggested = suggested_defaults(hass)
     defaults = {
         CONF_MQTT_ENABLED: True,
@@ -216,7 +227,10 @@ def _mqtt_schema(hass, values: dict | None = None) -> dict:
         vol.Optional(CONF_MQTT_HOST, default=defaults[CONF_MQTT_HOST]): str,
         vol.Optional(CONF_MQTT_PORT, default=defaults[CONF_MQTT_PORT]): int,
         vol.Optional(CONF_MQTT_USERNAME, default=defaults[CONF_MQTT_USERNAME]): str,
-        vol.Optional(CONF_MQTT_PASSWORD, default=defaults[CONF_MQTT_PASSWORD]): str,
+        vol.Optional(
+            CONF_MQTT_PASSWORD,
+            default=defaults[CONF_MQTT_PASSWORD] if prefill_password else "",
+        ): str,
         vol.Optional(CONF_MQTT_TLS, default=defaults[CONF_MQTT_TLS]): bool,
         vol.Optional(CONF_MQTT_PREFIX, default=defaults[CONF_MQTT_PREFIX]): str,
         vol.Optional(CONF_MQTT_RETAIN, default=defaults[CONF_MQTT_RETAIN]): bool,
