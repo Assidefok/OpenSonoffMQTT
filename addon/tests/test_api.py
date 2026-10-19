@@ -44,13 +44,44 @@ def test_status_without_client():
     assert status["devices"] == []
 
 
+def test_device_state_returns_409_without_client():
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            main.post_device_state("nope", main.StateBody(params={"switch": "on"}))
+        )
+
+    assert error.value.status_code == 409
+
+
+class FakeClient:
+    def __init__(self):
+        self.devices = {"dev1": {"deviceid": "dev1"}}
+        self.sent = []
+
+    async def async_send(self, deviceid, params):
+        self.sent.append((deviceid, params))
+
+
 def test_unknown_device_returns_404():
+    main.STATE.client = FakeClient()
+
     with pytest.raises(HTTPException) as error:
         asyncio.run(
             main.post_device_state("nope", main.StateBody(params={"switch": "on"}))
         )
 
     assert error.value.status_code == 404
+
+
+def test_device_state_is_forwarded():
+    main.STATE.client = FakeClient()
+
+    result = asyncio.run(
+        main.post_device_state("dev1", main.StateBody(params={"switch": "on"}))
+    )
+
+    assert result == {"ok": True}
+    assert main.STATE.client.sent == [("dev1", {"switch": "on"})]
 
 
 def test_post_config_tests_mqtt_and_saves(monkeypatch):

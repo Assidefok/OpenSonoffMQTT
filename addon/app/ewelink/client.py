@@ -24,7 +24,8 @@ from aiohttp import ClientSession
 from zeroconf import Zeroconf
 
 from .base import SIGNAL_CONNECTED, SIGNAL_UPDATE
-from .cloud import REGIONS, AuthError, XRegistryCloud
+from .cloud import REGIONS, XRegistryCloud
+from .cloud import AuthError as AuthError  # re-exported for callers
 from .local import XRegistryLocal
 
 _LOGGER = logging.getLogger(__name__)
