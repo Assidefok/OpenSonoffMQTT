@@ -14,8 +14,6 @@ ingress_port: 8099
 panel_icon: mdi:home-automation
 panel_title: OpenSonoffMQTT
 host_network: false
-map:
-  - data:rw
 options:
   log_level: info
 schema:
