@@ -76,8 +76,11 @@ class FlowHandler(ConfigFlow, domain=DOMAIN):
                     await self.cloud.login(**user_input)
 
                 if config_entry:
+                    # keep the MQTT settings stored in data by the guided setup
                     self.hass.config_entries.async_update_entry(
-                        config_entry, data=user_input, unique_id=self.unique_id
+                        config_entry,
+                        data={**config_entry.data, **user_input},
+                        unique_id=self.unique_id,
                     )
                     # entry will reload automatically because
                     # `entry.update_listeners` linked to `async_update_options`
