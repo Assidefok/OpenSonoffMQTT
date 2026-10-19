@@ -1,10 +1,14 @@
-"""Home-Assistant-free eWeLink cloud client for the standalone add-on.
+"""Home-Assistant-free eWeLink client for the standalone add-on.
 
-``base.py`` and ``cloud.py`` in this package are verbatim copies of
-``custom_components/sonoff/core/ewelink`` (they depend only on ``aiohttp`` and
-``asyncio``).  This module is a thin wrapper around ``XRegistryCloud`` with the
-small API the add-on web UI and MQTT bridge need: start/stop, the device dict,
-a serialisable snapshot, commands and two callbacks.
+``base.py``, ``cloud.py`` and ``local.py`` in this package are verbatim copies
+of ``custom_components/sonoff/core/ewelink`` (they depend only on ``aiohttp``,
+``cryptography`` and ``zeroconf``).  This module is a thin wrapper around
+``XRegistryCloud`` and ``XRegistryLocal`` with the small API the add-on web UI
+and MQTT bridge need: start/stop, the device dict, a serialisable snapshot,
+commands and two callbacks.
+
+Commands prefer the local network when the device was discovered over mDNS and
+fall back to the cloud websocket otherwise.
 
 Kept deliberately thin so the vendored modules above stay easy to re-sync.
 """
@@ -17,9 +21,11 @@ from contextlib import suppress
 from typing import Callable, Optional
 
 from aiohttp import ClientSession
+from zeroconf import Zeroconf
 
 from .base import SIGNAL_CONNECTED, SIGNAL_UPDATE
 from .cloud import REGIONS, AuthError, XRegistryCloud
+from .local import XRegistryLocal
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +52,8 @@ class EWeLinkClient:
 
         self._session: ClientSession | None = None
         self._cloud: XRegistryCloud | None = None
+        self._local: XRegistryLocal | None = None
+        self._zeroconf: Zeroconf | None = None
         self._devices: dict[str, dict] = {}
         self._connected = False
         self._connected_event: asyncio.Event | None = None
@@ -76,7 +84,7 @@ class EWeLinkClient:
         country_code = self._login_country_code()
 
         self._connected_event = asyncio.Event()
-        self._session = ClientSession()
+        self._session = ClientSession(trust_env=False)
         self._cloud = XRegistryCloud(self._session)
         self._cloud.dispatcher_connect(SIGNAL_UPDATE, self._handle_update)
         self._cloud.dispatcher_connect(SIGNAL_CONNECTED, self._handle_connected)
@@ -104,6 +112,9 @@ class EWeLinkClient:
             len(self._devices),
         )
 
+        # LAN discovery is optional: without it everything goes through the cloud
+        self._start_lan()
+
         self._started = True
         # keep the credentials so the ws loop can re-login when the token expires
         self._cloud.start(
@@ -119,6 +130,19 @@ class EWeLinkClient:
                 "eWeLink: no websocket connect within %.0fs, retrying in background",
                 FIRST_CONNECT_TIMEOUT,
             )
+
+    def _start_lan(self) -> None:
+        """Start mDNS discovery and LAN control (best effort)."""
+        try:
+            self._zeroconf = Zeroconf()
+            self._local = XRegistryLocal(self._session)
+            self._local.dispatcher_connect(SIGNAL_UPDATE, self._handle_local_update)
+            self._local.start(self._zeroconf)
+            _LOGGER.info("eWeLink: LAN discovery started")
+        except Exception as e:  # noqa: BLE001 - LAN is optional
+            _LOGGER.warning("eWeLink: LAN discovery not available: %s", e)
+            self._local = None
+            self._close_zeroconf()
 
     async def async_stop(self) -> None:
         """Cancel the websocket loop and close the HTTP session."""
@@ -137,14 +161,24 @@ class EWeLinkClient:
         self._connected = False
 
     async def async_send(self, deviceid: str, params: dict) -> None:
-        """Send a command (new state) to a device over the cloud websocket."""
-        cloud = self._cloud
+        """Send a command, preferring the local network when the device is found."""
         device = self._devices.get(deviceid)
 
         if device is None:
             _LOGGER.warning("eWeLink: can't send to unknown device %s", deviceid)
             return
 
+        if self._local is not None and device.get("host"):
+            result = await self._local.send(device, params, timeout=2)
+            if result == "online":
+                return
+            _LOGGER.debug(
+                "eWeLink: LAN send failed for %s (%s), using the cloud",
+                deviceid,
+                result,
+            )
+
+        cloud = self._cloud
         if cloud is None or not self._connected:
             _LOGGER.warning("eWeLink: can't send to %s, cloud disconnected", deviceid)
             return
@@ -210,7 +244,49 @@ class EWeLinkClient:
 
         self._notify_update(device)
 
-    # ---------------------------------------------------------------- helpers
+    def _handle_local_update(self, msg: dict) -> None:
+        """Merge a message discovered on the LAN (same shape as the integration)."""
+        did = msg.get("deviceid")
+        if not did:
+            return
+
+        device = self._devices.get(did)
+        params = msg.get("params")
+
+        if not params:
+            if device is None:
+                return
+            key = device.get("devicekey")
+            if not key:
+                return
+            try:
+                params = XRegistryLocal.decrypt_msg(msg, key)
+            except Exception as e:  # noqa: BLE001 - wrong key or broken payload
+                _LOGGER.debug("eWeLink: can't decrypt LAN message for %s: %s", did, e)
+                return
+
+        if not isinstance(params, dict):
+            return
+
+        if device is None:
+            # DIY device visible on the LAN but not in the cloud account
+            device = {
+                "deviceid": did,
+                "name": did,
+                "extra": {"uiid": 0},
+                "params": {},
+                "local": True,
+                "online": True,
+            }
+            self._devices[did] = device
+
+        device.setdefault("params", {}).update(params)
+        device["local"] = True
+        device["online"] = True
+        if host := msg.get("host"):
+            device["host"] = host
+
+        self._notify_update(device)
 
     def _notify_update(self, device: dict) -> None:
         if not self.on_update:
@@ -249,6 +325,18 @@ class EWeLinkClient:
             await cloud.stop()
             cloud.dispatcher.clear()
 
+        local, self._local = self._local, None
+        if local is not None:
+            with suppress(Exception):
+                await local.stop()
+        self._close_zeroconf()
+
         session, self._session = self._session, None
         if session is not None and not session.closed:
             await session.close()
+
+    def _close_zeroconf(self) -> None:
+        zeroconf, self._zeroconf = self._zeroconf, None
+        if zeroconf is not None:
+            with suppress(Exception):
+                zeroconf.close()

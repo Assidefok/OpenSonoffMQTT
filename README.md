@@ -134,7 +134,7 @@ The same bridge also runs as an app with its own web page, without the Home Assi
 2. Enter your eWeLink account and the MQTT broker (on HAOS with the Mosquitto add-on: `core-mosquitto`, port `1883`).
 3. Click **Save & connect**.
 
-It can also run anywhere with Docker: `docker compose up -d` and open <http://localhost:8099>. Full guide: [addon/README.md](addon/README.md).
+It can also run anywhere with Docker: `docker compose up -d` and open <http://localhost:8099>. Commands go over the LAN when the device is reachable and fall back to the eWeLink cloud. Full guide: [addon/README.md](addon/README.md).
 
 **Component review from DrZzs**
 

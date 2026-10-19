@@ -63,3 +63,12 @@ Then open <http://localhost:8099>.
 Change the `log_level` add-on option only on Home Assistant; when running with
 Docker you can set `LOG_LEVEL` (for example `LOG_LEVEL=debug`) in the compose
 `environment` section, or pass `--log-level` to uvicorn yourself.
+
+## How it talks to your devices
+
+- It logs into the eWeLink cloud with your account and loads the device list.
+- If a device is reachable on the local network (mDNS `_ewelink._tcp.local`),
+  commands go over the LAN first and fall back to the cloud; state updates
+  arrive from both.
+- DIY devices that only exist on the LAN are added automatically.
+
