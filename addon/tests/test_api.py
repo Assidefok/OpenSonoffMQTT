@@ -67,6 +67,22 @@ def test_logs_endpoint_returns_the_buffer():
     assert asyncio.run(main.get_logs()) == {"lines": ["one", "two"]}
 
 
+def test_messages_endpoint_is_empty_without_bridge():
+    assert asyncio.run(main.get_messages()) == {"messages": []}
+
+
+def test_messages_endpoint_forwards_bridge_messages():
+    class FakeBridge:
+        def recent_messages(self):
+            return [{"time": "10:00:00", "topic": "sonoff/bridge/status"}]
+
+    main.STATE.bridge = FakeBridge()
+
+    assert asyncio.run(main.get_messages())["messages"][0]["topic"] == (
+        "sonoff/bridge/status"
+    )
+
+
 def test_device_state_returns_409_without_client():
     with pytest.raises(HTTPException) as error:
         asyncio.run(

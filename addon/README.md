@@ -43,13 +43,16 @@ starts publishing them to MQTT.
 
 ## Web UI
 
-The app is the control panel for the bridge, split into three tabs:
+The app is the control panel for the bridge, split into four tabs:
 
 - **Devices** — every device with its online state, switch control and live
   power / voltage / current, plus a status line with the MQTT connection, the
   topic prefix and the Home Assistant discovery state.
 - **Configuration** — the eWeLink account, the MQTT broker and the discovery
   options.
+- **MQTT** — every message the app publishes (topic and payload, last 200),
+  refreshed every 2 seconds, so you can see exactly what Home Assistant
+  receives.
 - **Logs** — the last 200 lines of the app, refreshed every 3 seconds (MQTT
   connection, eWeLink login, discovery and errors), so you can diagnose the
   bridge without leaving the app.
