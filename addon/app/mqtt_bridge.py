@@ -96,6 +96,11 @@ class MQTTBridge:
     def connected(self) -> bool:
         return self._client.connected
 
+    @property
+    def published_count(self) -> int:
+        """Retained Home Assistant discovery configs currently published."""
+        return len(self._published)
+
     def start(self) -> None:
         self._client.start()
 

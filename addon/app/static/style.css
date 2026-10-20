@@ -93,6 +93,74 @@ main {
   padding: 22px;
 }
 
+.tabs {
+  display: flex;
+  gap: 6px;
+  max-width: 980px;
+  margin: 18px auto 0;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 8px 8px 0 0;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: var(--panel);
+  filter: none;
+}
+
+.tab.active {
+  color: var(--text);
+  background: var(--panel);
+  border-color: var(--border);
+  border-bottom-color: var(--accent);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.statusline {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.footer {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 6px 22px 30px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.device .values {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.logs pre {
+  min-height: 340px;
+  margin: 12px 0 0;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

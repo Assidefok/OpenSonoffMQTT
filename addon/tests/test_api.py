@@ -1,6 +1,8 @@
 """Tests for the FastAPI layer (skipped when FastAPI is not installed)."""
 
 import asyncio
+import re
+from pathlib import Path
 
 import pytest
 
@@ -42,6 +44,27 @@ def test_status_without_client():
 
     assert status["ewelink"]["connected"] is False
     assert status["devices"] == []
+    assert status["version"] == main.APP_VERSION
+    assert status["mqtt"]["discovery"] is True
+    assert status["mqtt"]["prefix"] == "sonoff"
+
+
+def test_app_version_matches_the_addon_manifest():
+    manifest = Path(main.__file__).resolve().parents[1] / "config.yaml"
+    match = re.search(
+        r'^version:\s*"?([^"\s]+)"?', manifest.read_text(encoding="utf-8"), re.M
+    )
+
+    assert match, "addon/config.yaml has no version"
+    assert match.group(1) == main.APP_VERSION
+
+
+def test_logs_endpoint_returns_the_buffer():
+    main.STATE.logs.clear()
+    main.STATE.logs.append("one")
+    main.STATE.logs.append("two")
+
+    assert asyncio.run(main.get_logs()) == {"lines": ["one", "two"]}
 
 
 def test_device_state_returns_409_without_client():

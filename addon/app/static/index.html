@@ -18,87 +18,114 @@
       <div class="badges">
         <span class="badge" id="badge-ewelink">eWeLink: …</span>
         <span class="badge" id="badge-mqtt">MQTT: …</span>
+        <span class="badge" id="badge-discovery">Discovery: …</span>
       </div>
     </header>
 
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="devices" role="tab">Devices</button>
+      <button type="button" class="tab" data-tab="config" role="tab">Configuration</button>
+      <button type="button" class="tab" data-tab="logs" role="tab">Logs</button>
+    </nav>
+
     <main>
-      <form id="config-form" autocomplete="off">
-        <section class="grid">
-          <div class="card">
-            <h2>1. eWeLink account</h2>
-            <p class="hint">The same email and password you use in the eWeLink app.</p>
+      <section id="panel-devices" class="panel">
+        <div class="statusline" id="statusline">Waiting for the first status…</div>
 
-            <label for="ew-username">Email or phone</label>
-            <input id="ew-username" name="username" type="text" placeholder="you@example.com" required />
-
-            <label for="ew-password">Password</label>
-            <input id="ew-password" name="password" type="password" placeholder="Password" />
-
-            <label for="ew-country">Country code <span class="optional">(optional)</span></label>
-            <input id="ew-country" name="country_code" type="text" placeholder="+34" />
+        <section class="card devices">
+          <div class="card-head">
+            <h2>Devices</h2>
+            <span class="hint" id="device-count"></span>
           </div>
-
-          <div class="card">
-            <h2>2. MQTT broker</h2>
-            <p class="hint">
-              On Home Assistant OS with the Mosquitto add-on use <code>core-mosquitto</code> and
-              port <code>1883</code>.
-            </p>
-
-            <div class="row">
-              <div class="grow">
-                <label for="mq-host">Broker address</label>
-                <input id="mq-host" name="host" type="text" placeholder="core-mosquitto" required />
-              </div>
-              <div class="port">
-                <label for="mq-port">Port</label>
-                <input id="mq-port" name="port" type="number" min="1" max="65535" value="1883" />
-              </div>
-            </div>
-
-            <label for="mq-username">Username <span class="optional">(optional)</span></label>
-            <input id="mq-username" name="username" type="text" />
-
-            <label for="mq-password">Password <span class="optional">(optional)</span></label>
-            <input id="mq-password" name="password" type="password" />
-
-            <div class="row checks">
-              <label class="check"><input id="mq-tls" name="tls" type="checkbox" /> Use TLS/SSL</label>
-              <label class="check"><input id="mq-retain" name="retain" type="checkbox" checked /> Retain state</label>
-            </div>
-
-            <label class="check"><input id="mq-discovery" name="discovery" type="checkbox" checked /> Publish Home Assistant discovery (devices show up in HA)</label>
-
-            <label for="mq-prefix">Topic prefix</label>
-            <input id="mq-prefix" name="prefix" type="text" value="sonoff" />
-
-            <label for="mq-discovery-prefix">Home Assistant discovery prefix <span class="optional">(optional)</span></label>
-            <input id="mq-discovery-prefix" name="discovery_prefix" type="text" value="homeassistant" />
-          </div>
+          <p class="hint">
+            Every device is published over MQTT and, with discovery enabled,
+            added to Home Assistant automatically.
+          </p>
+          <p id="devices-empty" class="hint">
+            No devices yet. Open <strong>Configuration</strong> and save your eWeLink account.
+          </p>
+          <ul id="devices" class="device-list"></ul>
         </section>
-
-        <div class="actions">
-          <button id="save" type="submit">Save &amp; connect</button>
-          <span id="toast" class="toast" role="status"></span>
-        </div>
-      </form>
-
-      <section class="card devices">
-        <div class="card-head">
-          <h2>Devices</h2>
-          <span class="hint" id="device-count"></span>
-        </div>
-        <p id="devices-empty" class="hint">No devices yet. Save the configuration to connect.</p>
-        <ul id="devices" class="device-list"></ul>
       </section>
 
-      <section class="card logs">
-        <details>
-          <summary>Logs</summary>
+      <section id="panel-config" class="panel" hidden>
+        <form id="config-form" autocomplete="off">
+          <section class="grid">
+            <div class="card">
+              <h2>1. eWeLink account</h2>
+              <p class="hint">The same email and password you use in the eWeLink app.</p>
+
+              <label for="ew-username">Email or phone</label>
+              <input id="ew-username" name="username" type="text" placeholder="you@example.com" required />
+
+              <label for="ew-password">Password</label>
+              <input id="ew-password" name="password" type="password" placeholder="Password" />
+
+              <label for="ew-country">Country code <span class="optional">(optional)</span></label>
+              <input id="ew-country" name="country_code" type="text" placeholder="+34" />
+            </div>
+
+            <div class="card">
+              <h2>2. MQTT broker</h2>
+              <p class="hint">
+                On Home Assistant OS with the Mosquitto add-on use <code>core-mosquitto</code> and
+                port <code>1883</code>.
+              </p>
+
+              <div class="row">
+                <div class="grow">
+                  <label for="mq-host">Broker address</label>
+                  <input id="mq-host" name="host" type="text" placeholder="core-mosquitto" required />
+                </div>
+                <div class="port">
+                  <label for="mq-port">Port</label>
+                  <input id="mq-port" name="port" type="number" min="1" max="65535" value="1883" />
+                </div>
+              </div>
+
+              <label for="mq-username">Username <span class="optional">(optional)</span></label>
+              <input id="mq-username" name="username" type="text" />
+
+              <label for="mq-password">Password <span class="optional">(optional)</span></label>
+              <input id="mq-password" name="password" type="password" />
+
+              <div class="row checks">
+                <label class="check"><input id="mq-tls" name="tls" type="checkbox" /> Use TLS/SSL</label>
+                <label class="check"><input id="mq-retain" name="retain" type="checkbox" checked /> Retain state</label>
+              </div>
+
+              <label class="check"><input id="mq-discovery" name="discovery" type="checkbox" checked /> Publish Home Assistant discovery (devices show up in HA)</label>
+
+              <label for="mq-prefix">Topic prefix</label>
+              <input id="mq-prefix" name="prefix" type="text" value="sonoff" />
+
+              <label for="mq-discovery-prefix">Home Assistant discovery prefix <span class="optional">(optional)</span></label>
+              <input id="mq-discovery-prefix" name="discovery_prefix" type="text" value="homeassistant" />
+            </div>
+          </section>
+
+          <div class="actions">
+            <button id="save" type="submit">Save &amp; connect</button>
+            <span id="toast" class="toast" role="status"></span>
+          </div>
+        </form>
+      </section>
+
+      <section id="panel-logs" class="panel" hidden>
+        <section class="card logs">
+          <div class="card-head">
+            <h2>Logs</h2>
+            <span class="hint">last 200 lines, refreshed every 3 s</span>
+          </div>
           <pre id="logs"></pre>
-        </details>
+        </section>
       </section>
     </main>
+
+    <footer class="footer">
+      OpenSonoffMQTT <span id="version">…</span> ·
+      <a href="https://github.com/Assidefok/OpenSonoffMQTT" target="_blank" rel="noreferrer">GitHub</a>
+    </footer>
 
     <script src="static/app.js"></script>
   </body>
