@@ -54,6 +54,7 @@ class MQTTClient:
         self.on_message = on_message
 
         self._connected = False
+        self._stopping = False
         self._client = _new_client(client_id)
         self._client.reconnect_delay_set(min_delay=1, max_delay=30)
 
@@ -75,6 +76,7 @@ class MQTTClient:
         self._client.loop_start()
 
     def stop(self) -> None:
+        self._stopping = True
         try:
             self._client.disconnect()
         except Exception:  # noqa: BLE001 - already disconnected
@@ -111,7 +113,14 @@ class MQTTClient:
 
     def _handle_disconnect(self, client, userdata, *args):
         self._connected = False
-        _LOGGER.warning("MQTT disconnected from %s:%s", self.host, self.port)
+        if self._stopping:
+            _LOGGER.debug("MQTT disconnected from %s:%s (stop)", self.host, self.port)
+            return
+        _LOGGER.warning(
+            "MQTT disconnected from %s:%s, retrying in the background",
+            self.host,
+            self.port,
+        )
 
     def _handle_message(self, client, userdata, msg):
         if self.on_message:
