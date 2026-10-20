@@ -2,8 +2,6 @@
 
 import json
 
-import pytest
-
 from app import mqtt_bridge
 
 
@@ -38,7 +36,10 @@ def make_bridge(devices, monkeypatch, **mqtt):
 
 
 def published(bridge):
-    return {(topic, payload, retain) for topic, payload, retain in bridge._client.published}
+    return {
+        (topic, payload, retain)
+        for topic, payload, retain in bridge._client.published
+    }
 
 
 def test_publish_all_publishes_switch_and_sensor(monkeypatch):
