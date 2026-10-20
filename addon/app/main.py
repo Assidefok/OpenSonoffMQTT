@@ -25,6 +25,8 @@ from .store import load_config, masked, merge_secrets, save_config
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
 
+APP_VERSION = "0.4.0"
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -234,12 +236,21 @@ async def post_config(body: ConfigBody) -> dict:
 @app.get("/api/status")
 async def get_status() -> dict:
     client = STATE.client
+    bridge = STATE.bridge
+    mqtt = STATE.config.get("mqtt") or {}
     return {
+        "version": APP_VERSION,
         "ewelink": {
             "connected": STATE.ewelink_connected,
             "error": STATE.ewelink_error,
         },
-        "mqtt": {"connected": STATE.mqtt_connected},
+        "mqtt": {
+            "connected": STATE.mqtt_connected,
+            "prefix": mqtt.get("prefix"),
+            "discovery": bool(mqtt.get("discovery", True)),
+            "discovery_prefix": mqtt.get("discovery_prefix"),
+            "entities": bridge.published_count if bridge is not None else 0,
+        },
         "devices": client.snapshot() if client is not None else [],
     }
 

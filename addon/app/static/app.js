@@ -31,6 +31,25 @@ function showToast(message, kind) {
   }
 }
 
+// ---------------------------------------------------------------------- tabs
+function showTab(name, push) {
+  const valid = ["devices", "config", "logs"];
+  if (!valid.includes(name)) name = "devices";
+
+  for (const tab of document.querySelectorAll(".tab")) {
+    const active = tab.dataset.tab === name;
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", String(active));
+  }
+  for (const panel of document.querySelectorAll(".panel")) {
+    panel.hidden = panel.id !== "panel-" + name;
+  }
+  if (push && location.hash !== "#" + name) {
+    history.replaceState(null, "", "#" + name);
+  }
+  if (name === "logs") refreshLogs();
+}
+
 // ---------------------------------------------------------------- config form
 async function loadConfig() {
   const config = await api("api/config");
@@ -100,10 +119,25 @@ async function saveConfig(event) {
 }
 
 // --------------------------------------------------------------- status/devices
-function setBadge(id, label, ok) {
+function setBadge(id, label, state) {
   const badge = $(id);
   badge.textContent = label;
-  badge.className = "badge " + (ok ? "ok" : "bad");
+  badge.className = "badge" + (state === null ? "" : state ? " ok" : " bad");
+}
+
+function metrics(device) {
+  const params = device.params || {};
+  const parts = [];
+  if (typeof params.power === "number") parts.push(params.power + " W");
+  if (typeof params.voltage === "number") {
+    const volts = params.voltage > 1000 ? params.voltage / 100 : params.voltage;
+    parts.push(volts.toFixed(1) + " V");
+  }
+  if (typeof params.current === "number") {
+    const amps = params.current > 100 ? params.current / 100 : params.current;
+    parts.push(amps.toFixed(2) + " A");
+  }
+  return parts.join(" · ");
 }
 
 function renderDevices(devices) {
@@ -129,8 +163,16 @@ function renderDevices(devices) {
     name.textContent = device.name || device.deviceid;
     const id = document.createElement("div");
     id.className = "id";
-    id.textContent = device.deviceid;
+    id.textContent = device.deviceid + (device.uiid ? " · UIID " + device.uiid : "");
     info.append(name, id);
+
+    const values = metrics(device);
+    if (values) {
+      const detail = document.createElement("div");
+      detail.className = "values";
+      detail.textContent = values;
+      info.appendChild(detail);
+    }
     item.appendChild(info);
 
     const sw = device.params && device.params.switch;
@@ -164,30 +206,61 @@ async function toggleDevice(deviceid, turnOn, button) {
   }
 }
 
+function renderStatus(status) {
+  const ewelink = status.ewelink || {};
+  const mqtt = status.mqtt || {};
+
+  setBadge("badge-ewelink", ewelink.connected ? "eWeLink: connected" : "eWeLink: offline", ewelink.connected);
+  setBadge("badge-mqtt", mqtt.connected ? "MQTT: connected" : "MQTT: offline", mqtt.connected);
+
+  if (mqtt.discovery) {
+    const entities = mqtt.entities ? ` (${mqtt.entities})` : "";
+    setBadge("badge-discovery", "Discovery: on" + entities, true);
+  } else {
+    setBadge("badge-discovery", "Discovery: off", null);
+  }
+
+  $("version").textContent = "v" + (status.version || "?");
+  const bits = [];
+  if (mqtt.prefix) bits.push("prefix " + mqtt.prefix);
+  if (mqtt.discovery) {
+    bits.push("HA discovery → " + (mqtt.discovery_prefix || "homeassistant"));
+  } else {
+    bits.push("HA discovery disabled");
+  }
+  if (mqtt.entities) bits.push(mqtt.entities + " discovery entities");
+  $("statusline").textContent = bits.join(" · ");
+
+  renderDevices(status.devices || []);
+
+  if (!ewelink.connected && ewelink.error) {
+    showToast("eWeLink: " + ewelink.error, "bad");
+  }
+}
+
 async function refreshStatus() {
   try {
-    const status = await api("api/status");
-    setBadge("badge-ewelink", status.ewelink.connected ? "eWeLink: connected" : "eWeLink: offline", status.ewelink.connected);
-    setBadge("badge-mqtt", status.mqtt.connected ? "MQTT: connected" : "MQTT: offline", status.mqtt.connected);
-    renderDevices(status.devices || []);
-    if (!status.ewelink.connected && status.ewelink.error) {
-      showToast("eWeLink: " + status.ewelink.error, "bad");
-    }
+    renderStatus(await api("api/status"));
   } catch (error) {
     setBadge("badge-ewelink", "eWeLink: ?", false);
     setBadge("badge-mqtt", "MQTT: ?", false);
+    $("statusline").textContent = "Can't read the status: " + error.message;
   }
 }
 
 // ----------------------------------------------------------------------- logs
+function logsPanelVisible() {
+  return !$("panel-logs").hidden;
+}
+
 async function refreshLogs() {
-  const details = document.querySelector(".logs details");
-  if (!details || !details.open) return;
+  if (!logsPanelVisible()) return;
   try {
     const logs = await api("api/logs");
     const pre = $("logs");
+    const atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 4;
     pre.textContent = (logs.lines || []).join("\n");
-    pre.scrollTop = pre.scrollHeight;
+    if (atBottom) pre.scrollTop = pre.scrollHeight;
   } catch (error) {
     /* ignore log refresh errors */
   }
@@ -195,9 +268,14 @@ async function refreshLogs() {
 
 // ---------------------------------------------------------------------- start
 $("config-form").addEventListener("submit", saveConfig);
-document.querySelector(".logs details").addEventListener("toggle", refreshLogs);
 
+for (const tab of document.querySelectorAll(".tab")) {
+  tab.addEventListener("click", () => showTab(tab.dataset.tab, true));
+}
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1), false));
+
+showTab(location.hash.slice(1), false);
 loadConfig().catch((error) => showToast("Can't load config: " + error.message, "bad"));
 refreshStatus();
 setInterval(refreshStatus, 5000);
-setInterval(refreshLogs, 5000);
+setInterval(refreshLogs, 3000);

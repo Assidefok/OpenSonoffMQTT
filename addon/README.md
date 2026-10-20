@@ -41,6 +41,19 @@ The configuration page asks for two things:
 Click **Save & connect**. The app logs in to eWeLink, loads your devices and
 starts publishing them to MQTT.
 
+## Web UI
+
+The app is the control panel for the bridge, split into three tabs:
+
+- **Devices** — every device with its online state, switch control and live
+  power / voltage / current, plus a status line with the MQTT connection, the
+  topic prefix and the Home Assistant discovery state.
+- **Configuration** — the eWeLink account, the MQTT broker and the discovery
+  options.
+- **Logs** — the last 200 lines of the app, refreshed every 3 seconds (MQTT
+  connection, eWeLink login, discovery and errors), so you can diagnose the
+  bridge without leaving the app.
+
 ## Home Assistant discovery
 
 Discovery is **on by default**: the app publishes retained
