@@ -51,6 +51,9 @@ async function loadConfig() {
   $("mq-tls").checked = Boolean(config.mqtt.tls);
   $("mq-retain").checked = Boolean(config.mqtt.retain);
   $("mq-prefix").value = config.mqtt.prefix || "sonoff";
+  $("mq-discovery").checked = config.mqtt.discovery !== false;
+  $("mq-discovery-prefix").value =
+    config.mqtt.discovery_prefix || "homeassistant";
 }
 
 function collectConfig() {
@@ -68,6 +71,9 @@ function collectConfig() {
       tls: $("mq-tls").checked,
       prefix: $("mq-prefix").value.trim() || "sonoff",
       retain: $("mq-retain").checked,
+      discovery: $("mq-discovery").checked,
+      discovery_prefix:
+        $("mq-discovery-prefix").value.trim() || "homeassistant",
     },
   };
 }

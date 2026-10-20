@@ -170,6 +170,8 @@ class MQTTBody(BaseModel):
     tls: bool = False
     prefix: str = "sonoff"
     retain: bool = True
+    discovery: bool = True
+    discovery_prefix: str = "homeassistant"
 
 
 class ConfigBody(BaseModel):

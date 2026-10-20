@@ -1,5 +1,5 @@
 name: OpenSonoffMQTT
-version: "0.2.0"
+version: "0.3.0"
 slug: opensonoffmqtt
 description: Control Sonoff/eWeLink devices and publish them over MQTT
 url: https://github.com/Assidefok/OpenSonoffMQTT

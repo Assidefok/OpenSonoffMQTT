@@ -20,6 +20,8 @@ DEFAULT_CONFIG = {
         "tls": False,
         "prefix": "sonoff",
         "retain": True,
+        "discovery": True,
+        "discovery_prefix": "homeassistant",
     },
 }
 
@@ -43,6 +45,10 @@ def _normalize(raw: dict | None) -> dict:
     config["mqtt"]["tls"] = bool(config["mqtt"]["tls"])
     config["mqtt"]["retain"] = bool(config["mqtt"]["retain"])
     config["mqtt"]["prefix"] = str(config["mqtt"]["prefix"] or "sonoff").strip("/")
+    config["mqtt"]["discovery"] = bool(config["mqtt"]["discovery"])
+    config["mqtt"]["discovery_prefix"] = str(
+        config["mqtt"]["discovery_prefix"] or "homeassistant"
+    ).strip("/")
     return config
 
 
