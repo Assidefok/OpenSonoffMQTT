@@ -67,8 +67,13 @@
               <label class="check"><input id="mq-retain" name="retain" type="checkbox" checked /> Retain state</label>
             </div>
 
+            <label class="check"><input id="mq-discovery" name="discovery" type="checkbox" checked /> Publish Home Assistant discovery (devices show up in HA)</label>
+
             <label for="mq-prefix">Topic prefix</label>
             <input id="mq-prefix" name="prefix" type="text" value="sonoff" />
+
+            <label for="mq-discovery-prefix">Home Assistant discovery prefix <span class="optional">(optional)</span></label>
+            <input id="mq-discovery-prefix" name="discovery_prefix" type="text" value="homeassistant" />
           </div>
         </section>
 

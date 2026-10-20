@@ -41,6 +41,24 @@ The configuration page asks for two things:
 Click **Save & connect**. The app logs in to eWeLink, loads your devices and
 starts publishing them to MQTT.
 
+## Home Assistant discovery
+
+Discovery is **on by default**: the app publishes retained
+`homeassistant/switch/<unique_id>/config` and
+`homeassistant/sensor/<unique_id>/config` payloads, so every device appears
+automatically under **Settings > Devices & services > MQTT** — no YAML and no
+custom integration needed.
+
+- Each Sonoff device becomes one Home Assistant device
+  (`opensonoffmqtt_<deviceid>`) with one switch per channel and sensors for
+  power, voltage, current, temperature and humidity when the device reports
+  them.
+- Entities follow the per-device availability topic, and stopping the app marks
+  them offline.
+- Uncheck **Publish Home Assistant discovery** (and/or change the discovery
+  prefix) in the configuration form if you use the custom integration and don't
+  want duplicate entities.
+
 ## MQTT topics
 
 With the default prefix `sonoff`, the app publishes/subscribes:
@@ -53,6 +71,7 @@ With the default prefix `sonoff`, the app publishes/subscribes:
 | `sonoff/<deviceid>/set` | broker → app | JSON params, or `ON` / `OFF` / `TOGGLE` |
 | `sonoff/bridge/status` | app → broker | `online` / `offline` (retained) |
 | `sonoff/bridge/devices` | app → broker | device list, JSON (retained) |
+| `homeassistant/<component>/<unique_id>/config` | app → broker | Home Assistant discovery (retained) |
 
 ## Stand-alone Docker
 
