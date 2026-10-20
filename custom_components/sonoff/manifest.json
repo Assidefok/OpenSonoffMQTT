@@ -1,7 +1,9 @@
 {
   "domain": "sonoff",
   "name": "Sonoff",
-  "after_dependencies": ["mqtt"],
+  "after_dependencies": [
+    "mqtt"
+  ],
   "codeowners": [
     "@AlexxIT",
     "@Assidefok"
@@ -17,5 +19,5 @@
   "requirements": [
     "paho-mqtt>=1.6.1"
   ],
-  "version": "3.18.2"
+  "version": "3.18.3"
 }
