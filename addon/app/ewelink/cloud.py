@@ -329,8 +329,17 @@ class XRegistryCloud(ResponseWaiter, XRegistryBase):
         return self.auth["user"]["countryCode"]
 
     async def login(
-        self, username: str, password: str, country_code: str = "+86", app: int = 0
+        self,
+        username: str,
+        password: str,
+        country_code: str = "+86",
+        app: int = 0,
+        **_extra: object,
     ) -> bool:
+        # The caller can pass extra settings (MQTT wizard fields); only the
+        # fields above belong to a login, ignore the rest.
+        if _extra:
+            _LOGGER.debug(f"Ignoring extra login fields: {sorted(_extra)}")
         if username == "token":
             self.region, token = password.split(":")
             return await self.login_token(token, 1)
