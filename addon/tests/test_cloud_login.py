@@ -78,7 +78,7 @@ def _load_cloud(path: Path, alias: str):
 
 @pytest.mark.parametrize("copy", CLOUD_FILES, ids=list(CLOUD_FILES))
 def test_login_binds_mqtt_kwargs(copy: str) -> None:
-    """Binding the real signature must accept mqtt_* kwargs (old code raised TypeError)."""
+    """The real signature must accept mqtt_* kwargs (the old code raised)."""
     path = CLOUD_FILES[copy]
     try:
         module = _load_cloud(path, f"_login_probe_{copy}")
