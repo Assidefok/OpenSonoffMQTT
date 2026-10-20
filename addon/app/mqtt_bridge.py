@@ -252,7 +252,9 @@ class MQTTBridge:
                         "name": label,
                         "unique_id": uid,
                         "state_topic": state_topic,
-                        "value_template": "{{ value_json.params.%s }}" % key,
+                        # eWeLink reports these params x100 (0.01 W/V/A/°C/%).
+                        "value_template": "{{ value_json.params.%s | float(0) / 100 }}"
+                        % key,
                         "device_class": device_class,
                         "unit_of_measurement": unit,
                         "state_class": "measurement",
