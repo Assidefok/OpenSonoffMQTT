@@ -13,6 +13,7 @@ from homeassistant.components import persistent_notification, system_health
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.system_info import async_get_system_info
+from homeassistant.loader import async_get_integration
 
 from .core import xutils
 from .core.const import DOMAIN, PRIVATE_KEYS
@@ -28,7 +29,7 @@ def async_register(
 async def system_health_info(hass: HomeAssistant):
     cloud_online = local_online = cloud_total = local_total = 0
 
-    for registry in hass.data[DOMAIN].values():
+    for registry in hass.data.get(DOMAIN, {}).values():
         for device in registry.devices.values():
             if "online" in device:
                 cloud_total += 1
@@ -41,7 +42,7 @@ async def system_health_info(hass: HomeAssistant):
 
     source_hash = await hass.async_add_executor_job(xutils.source_hash)
 
-    integration = hass.data["integrations"][DOMAIN]
+    integration = await async_get_integration(hass, DOMAIN)
     info = {
         "version": f"{integration.version} ({source_hash})",
         "cloud_online": f"{cloud_online} / {cloud_total}",
@@ -65,7 +66,7 @@ async def setup_debug(hass: HomeAssistant, logger: Logger):
 
     source_hash = await hass.async_add_executor_job(xutils.source_hash)
 
-    integration = hass.data["integrations"][DOMAIN]
+    integration = await async_get_integration(hass, DOMAIN)
     info = await async_get_system_info(hass)
     info[DOMAIN + "_version"] = f"{integration.version} ({source_hash})"
     logger.debug(f"SysInfo: {info}")
