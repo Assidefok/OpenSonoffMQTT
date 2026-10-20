@@ -25,6 +25,7 @@
     <nav class="tabs" role="tablist">
       <button type="button" class="tab active" data-tab="devices" role="tab">Devices</button>
       <button type="button" class="tab" data-tab="config" role="tab">Configuration</button>
+      <button type="button" class="tab" data-tab="mqtt" role="tab">MQTT</button>
       <button type="button" class="tab" data-tab="logs" role="tab">Logs</button>
     </nav>
 
@@ -109,6 +110,20 @@
             <span id="toast" class="toast" role="status"></span>
           </div>
         </form>
+      </section>
+
+      <section id="panel-mqtt" class="panel" hidden>
+        <section class="card logs">
+          <div class="card-head">
+            <h2>MQTT messages</h2>
+            <span class="hint">last 200 published messages, refreshed every 2 s</span>
+          </div>
+          <p class="hint">
+            Everything the app publishes (state, availability, Home Assistant
+            discovery) shows up here.
+          </p>
+          <pre id="mqtt-messages"></pre>
+        </section>
       </section>
 
       <section id="panel-logs" class="panel" hidden>

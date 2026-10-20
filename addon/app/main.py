@@ -25,7 +25,7 @@ from .store import load_config, masked, merge_secrets, save_config
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
 
-APP_VERSION = "0.4.1"
+APP_VERSION = "0.4.2"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -274,3 +274,9 @@ async def post_device_state(deviceid: str, body: StateBody) -> dict:
 @app.get("/api/logs")
 async def get_logs() -> dict:
     return {"lines": list(STATE.logs)}
+
+
+@app.get("/api/messages")
+async def get_messages() -> dict:
+    bridge = STATE.bridge
+    return {"messages": bridge.recent_messages() if bridge is not None else []}

@@ -33,7 +33,7 @@ function showToast(message, kind) {
 
 // ---------------------------------------------------------------------- tabs
 function showTab(name, push) {
-  const valid = ["devices", "config", "logs"];
+  const valid = ["devices", "config", "mqtt", "logs"];
   if (!valid.includes(name)) name = "devices";
 
   for (const tab of document.querySelectorAll(".tab")) {
@@ -48,6 +48,7 @@ function showTab(name, push) {
     history.replaceState(null, "", "#" + name);
   }
   if (name === "logs") refreshLogs();
+  if (name === "mqtt") refreshMessages();
 }
 
 // ---------------------------------------------------------------- config form
@@ -269,6 +270,29 @@ async function refreshLogs() {
   }
 }
 
+// ---------------------------------------------------------------------- mqtt
+function mqttPanelVisible() {
+  return !$("panel-mqtt").hidden;
+}
+
+async function refreshMessages() {
+  if (!mqttPanelVisible()) return;
+  try {
+    const data = await api("api/messages");
+    const pre = $("mqtt-messages");
+    const atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 4;
+    const lines = (data.messages || []).map(
+      (message) => `${message.time}  ${message.topic}  ${message.payload}`
+    );
+    pre.textContent = lines.length
+      ? lines.join("\n")
+      : "Nothing published yet — wait for the first eWeLink update.";
+    if (atBottom) pre.scrollTop = pre.scrollHeight;
+  } catch (error) {
+    /* ignore message refresh errors */
+  }
+}
+
 // ---------------------------------------------------------------------- start
 $("config-form").addEventListener("submit", saveConfig);
 
@@ -282,3 +306,4 @@ loadConfig().catch((error) => showToast("Can't load config: " + error.message, "
 refreshStatus();
 setInterval(refreshStatus, 5000);
 setInterval(refreshLogs, 3000);
+setInterval(refreshMessages, 2000);

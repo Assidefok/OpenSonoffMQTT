@@ -21,6 +21,8 @@ It is transport-only and has no Home Assistant imports: the app passes a
 import asyncio
 import json
 import logging
+import time
+from collections import deque
 from typing import Awaitable, Callable
 
 from .mqtt_client import MQTTClient
@@ -79,6 +81,7 @@ class MQTTBridge:
         self._on_status = on_status
         self._published: dict[str, str] = {}
         self._signatures: dict[str, tuple] = {}
+        self._messages: deque[dict] = deque(maxlen=200)
 
         self._client = MQTTClient(
             host=config["host"],
@@ -101,15 +104,29 @@ class MQTTBridge:
         """Retained Home Assistant discovery configs currently published."""
         return len(self._published)
 
+    def recent_messages(self) -> list[dict]:
+        """Messages published since start, oldest first (for the web UI)."""
+        return list(self._messages)
+
+    def _publish(self, topic: str, payload: object, retain: bool) -> None:
+        self._client.publish(topic, payload, retain=retain)
+        self._messages.append(
+            {
+                "time": time.strftime("%H:%M:%S"),
+                "topic": topic,
+                "payload": str(payload)[:400],
+            }
+        )
+
     def start(self) -> None:
         self._client.start()
 
     def stop(self) -> None:
         for deviceid in list(self._devices()):
-            self._client.publish(
+            self._publish(
                 f"{self.prefix}/{deviceid}/availability", "offline", retain=True
             )
-        self._client.publish(f"{self.prefix}/bridge/status", "offline", retain=True)
+        self._publish(f"{self.prefix}/bridge/status", "offline", retain=True)
         self._client.stop()
 
     # state publishing (called by the app when eWeLink sends an update)
@@ -120,12 +137,12 @@ class MQTTBridge:
             return
 
         self._publish_discovery(device)
-        self._client.publish(
+        self._publish(
             f"{self.prefix}/{deviceid}/state",
             json.dumps(self._snapshot(device), default=str),
             retain=self.retain,
         )
-        self._client.publish(
+        self._publish(
             f"{self.prefix}/{deviceid}/availability",
             "online" if self._is_online(device) else "offline",
             retain=True,
@@ -151,7 +168,7 @@ class MQTTBridge:
             ),
             key=lambda d: (d["name"] or "", d["deviceid"] or ""),
         )
-        self._client.publish(
+        self._publish(
             f"{self.prefix}/bridge/devices",
             json.dumps(devices, default=str),
             retain=True,
@@ -168,13 +185,27 @@ class MQTTBridge:
             return set()
 
         entities = self._discovery_entities(device)
-        signature = (device.get("name"), tuple(sorted(entities)))
+        # The payload is part of the signature so an updated template (e.g. unit
+        # scaling) is republished instead of keeping the old retained config.
+        signature = (
+            device.get("name"),
+            tuple(
+                sorted(
+                    (
+                        uid,
+                        component,
+                        json.dumps(payload, sort_keys=True, default=str),
+                    )
+                    for uid, (component, payload) in entities.items()
+                )
+            ),
+        )
         if self._signatures.get(deviceid) == signature:
             return set(entities)
 
         for uid, (component, payload) in entities.items():
             topic = f"{self.discovery_prefix}/{component}/{uid}/config"
-            self._client.publish(topic, json.dumps(payload, default=str), retain=True)
+            self._publish(topic, json.dumps(payload, default=str), retain=True)
             self._published[uid] = topic
 
         self._signatures[deviceid] = signature
@@ -187,7 +218,7 @@ class MQTTBridge:
         for uid in list(self._published):
             if uid in keep:
                 continue
-            self._client.publish(self._published.pop(uid), "", retain=True)
+            self._publish(self._published.pop(uid), "", retain=True)
 
         for deviceid in list(self._signatures):
             prefix = f"opensonoffmqtt_{deviceid}_"
@@ -263,6 +294,46 @@ class MQTTBridge:
                     },
                 )
 
+        # Multi-channel devices (e.g. UIID 276) report channels in an array.
+        switches = params.get("switches")
+        has_switch_params = any(self._switch_channel(k) for k in params)
+        if isinstance(switches, list) and not has_switch_params:
+            for item in switches:
+                if not isinstance(item, dict):
+                    continue
+                outlet = item.get("outlet")
+                if outlet is None:
+                    continue
+                outlet = int(outlet)
+                key = f"switch_{outlet + 1}"
+                uid = f"opensonoffmqtt_{deviceid}_{key}"
+                entities[uid] = (
+                    "switch",
+                    {
+                        "name": f"Switch {outlet + 1}",
+                        "unique_id": uid,
+                        "state_topic": state_topic,
+                        "state_value_template": (
+                            "{{ (value_json.params.switches"
+                            " | selectattr('outlet', 'equalto', %d)"
+                            " | map(attribute='switch')"
+                            " | first) | default('off') }}"
+                            % outlet
+                        ),
+                        "command_topic": f"{self.prefix}/{deviceid}/set",
+                        "payload_on": json.dumps(
+                            {"switches": [{"outlet": outlet, "switch": "on"}]}
+                        ),
+                        "payload_off": json.dumps(
+                            {"switches": [{"outlet": outlet, "switch": "off"}]}
+                        ),
+                        "state_on": "on",
+                        "state_off": "off",
+                        **availability,
+                        "device": device_info,
+                    },
+                )
+
         return entities
 
     @staticmethod
@@ -282,7 +353,7 @@ class MQTTBridge:
         _LOGGER.info("MQTT connected, prefix %s", self.prefix)
         if self._on_status:
             self._on_status(True, "connected")
-        self._client.publish(f"{self.prefix}/bridge/status", "online", retain=True)
+        self._publish(f"{self.prefix}/bridge/status", "online", retain=True)
         self._schedule(self._publish_all_async())
 
     async def _publish_all_async(self) -> None:

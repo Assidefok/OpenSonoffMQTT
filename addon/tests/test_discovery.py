@@ -162,6 +162,80 @@ def test_multi_channel_switch_uses_json_payloads(monkeypatch):
     assert json.loads(config["payload_off"]) == {"switch_2": "off"}
 
 
+def test_switches_array_publishes_one_switch_per_outlet(monkeypatch):
+    devices = {
+        "dev1": {
+            "deviceid": "dev1",
+            "name": "Termo",
+            "online": True,
+            "params": {"switches": [{"outlet": 0, "switch": "on"}]},
+            "extra": {"uiid": 276},
+        }
+    }
+    bridge = make_bridge(devices, monkeypatch)
+    bridge.publish_all()
+
+    config = json.loads(
+        next(
+            payload
+            for topic, payload, retain in bridge._client.published
+            if topic == "homeassistant/switch/opensonoffmqtt_dev1_switch_1/config"
+        )
+    )
+    assert config["name"] == "Switch 1"
+    assert "selectattr('outlet', 'equalto', 0)" in config["state_value_template"]
+    assert json.loads(config["payload_on"]) == {
+        "switches": [{"outlet": 0, "switch": "on"}]
+    }
+    assert json.loads(config["payload_off"]) == {
+        "switches": [{"outlet": 0, "switch": "off"}]
+    }
+
+    topics = [topic for topic, payload, retain in bridge._client.published]
+    assert "homeassistant/switch/opensonoffmqtt_dev1_switch/config" not in topics
+
+
+def test_published_messages_are_tracked_for_the_ui(monkeypatch):
+    devices = {
+        "dev1": {
+            "deviceid": "dev1",
+            "name": "Kitchen",
+            "params": {"switch": "on"},
+        }
+    }
+    bridge = make_bridge(devices, monkeypatch)
+    bridge.publish_all()
+
+    messages = bridge.recent_messages()
+    assert messages
+    assert messages[-1]["topic"] == "sonoff/bridge/devices"
+    assert set(messages[-1]) == {"time", "topic", "payload"}
+
+
+def test_discovery_republishes_when_the_payload_changes(monkeypatch):
+    devices = {
+        "dev1": {
+            "deviceid": "dev1",
+            "name": "Kitchen",
+            "params": {"switch": "on"},
+            "extra": {"uiid": 1, "productModel": "Sonoff Basic"},
+        }
+    }
+    bridge = make_bridge(devices, monkeypatch)
+    bridge.publish_all()
+    configs = [t for t, _, _ in bridge._client.published if t.endswith("/config")]
+    first = len(configs)
+
+    bridge.publish_all()
+    same = [t for t, _, _ in bridge._client.published if t.endswith("/config")]
+    assert len(same) == first, "unchanged discovery must not be republished"
+
+    devices["dev1"]["extra"] = {"uiid": 2, "productModel": "Sonoff 2"}
+    bridge.publish_all()
+    changed = [t for t, _, _ in bridge._client.published if t.endswith("/config")]
+    assert len(changed) > first
+
+
 def test_stop_marks_devices_offline(monkeypatch):
     devices = {
         "dev1": {
