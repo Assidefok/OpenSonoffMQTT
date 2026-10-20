@@ -17,6 +17,7 @@ from homeassistant.loader import async_get_integration
 
 from .core import xutils
 from .core.const import DOMAIN, PRIVATE_KEYS
+from .core.ewelink import XRegistry
 
 
 @callback
@@ -30,6 +31,8 @@ async def system_health_info(hass: HomeAssistant):
     cloud_online = local_online = cloud_total = local_total = 0
 
     for registry in hass.data.get(DOMAIN, {}).values():
+        if not isinstance(registry, XRegistry):
+            continue
         for device in registry.devices.values():
             if "online" in device:
                 cloud_total += 1
