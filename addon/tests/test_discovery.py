@@ -48,7 +48,7 @@ def test_publish_all_publishes_switch_and_sensor(monkeypatch):
             "deviceid": "dev1",
             "name": "Kitchen",
             "online": True,
-            "params": {"switch": "on", "power": "12.5"},
+            "params": {"switch": "on", "power": 1250},
             "extra": {"uiid": 1, "productModel": "Sonoff Basic"},
         }
     }
@@ -80,7 +80,7 @@ def test_publish_all_publishes_switch_and_sensor(monkeypatch):
     sensor = payloads[sensor_topic]
     assert sensor["device_class"] == "power"
     assert sensor["unit_of_measurement"] == "W"
-    assert sensor["value_template"] == "{{ value_json.params.power }}"
+    assert sensor["value_template"] == "{{ value_json.params.power | float(0) / 100 }}"
 
     assert any(
         topic == "sonoff/dev1/state" and retain is True

@@ -25,7 +25,7 @@ from .store import load_config, masked, merge_secrets, save_config
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.4.1"
 
 _LOGGER = logging.getLogger(__name__)
 

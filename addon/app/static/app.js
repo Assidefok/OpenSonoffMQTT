@@ -125,18 +125,21 @@ function setBadge(id, label, state) {
   badge.className = "badge" + (state === null ? "" : state ? " ok" : " bad");
 }
 
+function scaled(value) {
+  // eWeLink reports power/voltage/current x100 (0.01 W/V/A).
+  const number = Number(value);
+  return Number.isFinite(number) ? number / 100 : Number.NaN;
+}
+
 function metrics(device) {
   const params = device.params || {};
   const parts = [];
-  if (typeof params.power === "number") parts.push(params.power + " W");
-  if (typeof params.voltage === "number") {
-    const volts = params.voltage > 1000 ? params.voltage / 100 : params.voltage;
-    parts.push(volts.toFixed(1) + " V");
-  }
-  if (typeof params.current === "number") {
-    const amps = params.current > 100 ? params.current / 100 : params.current;
-    parts.push(amps.toFixed(2) + " A");
-  }
+  const power = scaled(params.power);
+  if (Number.isFinite(power)) parts.push(power.toFixed(1) + " W");
+  const voltage = scaled(params.voltage);
+  if (Number.isFinite(voltage)) parts.push(voltage.toFixed(1) + " V");
+  const current = scaled(params.current);
+  if (Number.isFinite(current)) parts.push(current.toFixed(2) + " A");
   return parts.join(" · ");
 }
 
